@@ -1,0 +1,275 @@
+:root {
+  --primary-dark: #363333;
+  --secondary-dark: #272121;
+  --accent-orange: #e16428;
+  --light-bg: #f6e9e9;
+}
+
+.learner-dashboard-page {
+  min-height: 100vh;
+  background: var(--secondary-dark);
+  padding-top: 8rem;
+  padding-bottom: 5rem;
+}
+
+.learner-dashboard-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.learner-dashboard-welcome {
+  margin-bottom: 3rem;
+}
+
+.learner-dashboard-welcome-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.learner-dashboard-welcome-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.125rem;
+}
+
+.learner-dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .learner-dashboard-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.learner-dashboard-stat-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: box-shadow 0.3s;
+}
+
+.learner-dashboard-stat-card:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 100, 40, 0.3);
+  border-color: rgba(225, 100, 40, 0.3);
+}
+
+.learner-dashboard-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.learner-dashboard-stat-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--accent-orange);
+}
+
+.learner-dashboard-stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+.learner-dashboard-stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+}
+
+.learner-dashboard-section {
+  margin-bottom: 3rem;
+}
+
+.learner-dashboard-section-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+}
+
+.learner-dashboard-empty-state {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 3rem;
+  text-align: center;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.learner-dashboard-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1rem;
+}
+
+.learner-dashboard-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.learner-dashboard-empty-description {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1.5rem;
+}
+
+.learner-dashboard-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.learner-dashboard-course-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s;
+}
+
+.learner-dashboard-course-card:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 100, 40, 0.3);
+  border-color: rgba(225, 100, 40, 0.3);
+}
+
+.learner-dashboard-course-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.learner-dashboard-course-content {
+  flex: 1 1 0%;
+}
+
+.learner-dashboard-course-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.learner-dashboard-course-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.learner-dashboard-course-category {
+  padding: 0.25rem 0.75rem;
+  background-color: var(--accent-orange);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.learner-dashboard-course-instructor {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.learner-dashboard-course-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.learner-dashboard-achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .learner-dashboard-achievements-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.learner-dashboard-achievement-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s;
+}
+
+.learner-dashboard-achievement-card-earned {
+  box-shadow: 0 0 0 2px var(--accent-orange);
+}
+
+.learner-dashboard-achievement-card-not-earned {
+  opacity: 0.5;
+}
+
+.learner-dashboard-achievement-icon-wrapper {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.learner-dashboard-achievement-icon-wrapper-earned {
+  background: linear-gradient(to bottom right, var(--accent-orange), #ff8c42);
+}
+
+.learner-dashboard-achievement-icon-wrapper-not-earned {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.learner-dashboard-achievement-icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.learner-dashboard-achievement-icon-earned {
+  color: white;
+}
+
+.learner-dashboard-achievement-icon-not-earned {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.learner-dashboard-achievement-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.learner-dashboard-achievement-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+}
+

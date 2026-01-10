@@ -1,0 +1,11 @@
+/* App Component Styles */
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex-grow: 1;
+}

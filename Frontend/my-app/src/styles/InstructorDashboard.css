@@ -1,0 +1,301 @@
+/* Instructor Dashboard Page Styles */
+
+.instructor-dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #ffffff, #dbeafe, #e0e7ff);
+  padding-top: 8rem;
+  padding-bottom: 5rem;
+}
+
+.instructor-dashboard-content {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.instructor-dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+}
+
+.instructor-dashboard-title-section h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.instructor-dashboard-subtitle {
+  color: #f6e9e9;
+  font-size: 1.125rem;
+}
+
+.instructor-dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .instructor-dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .instructor-dashboard-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.instructor-stat-card {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.instructor-stat-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.instructor-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.instructor-stat-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #e16428;
+}
+
+.instructor-stat-value {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #f6e9e9;
+  margin-bottom: 0.25rem;
+}
+
+.instructor-stat-label {
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.instructor-courses-section {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.instructor-courses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.instructor-courses-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.instructor-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.instructor-course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.instructor-course-item:hover {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.instructor-course-info {
+  flex: 1;
+}
+
+.instructor-course-title {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.instructor-course-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.instructor-course-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.instructor-course-status.published {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.instructor-course-status.draft {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.instructor-course-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.instructor-course-action-button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.instructor-course-action-button:hover {
+  background-color: #f3f4f6;
+}
+
+.instructor-course-action-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.instructor-course-action-button.edit svg {
+  color: #ef4444;
+}
+
+.instructor-course-action-button.delete svg {
+  color: #ef4444;
+}
+
+.instructor-empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.instructor-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  color: #d1d5db;
+  margin: 0 auto 1rem;
+}
+
+.instructor-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.instructor-empty-description {
+  color: #4b5563;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal Styles */
+.instructor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.instructor-modal {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 32rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 1rem;
+}
+
+.instructor-modal-header {
+  margin-bottom: 1.5rem;
+}
+
+.instructor-modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+.instructor-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.instructor-modal-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.instructor-modal-label {
+  display: block;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.instructor-modal-input,
+.instructor-modal-select,
+.instructor-modal-textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  outline: none;
+}
+
+.instructor-modal-input:focus,
+.instructor-modal-select:focus,
+.instructor-modal-textarea:focus {
+  border-color: #4f46e5;
+}
+
+.instructor-modal-textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.instructor-modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.instructor-modal-button {
+  flex: 1;
+}
