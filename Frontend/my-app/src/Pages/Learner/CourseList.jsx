@@ -7,7 +7,7 @@ import CourseDetail from './CourseDetail';
 import ShinyText from '../../components/ui/ShinyText';
 import '../../styles/CourseList.css';
 
-const CourseList = ({ allCourses, onEnroll }) => {
+const CourseList = ({ allCourses, onEnroll, isAuthenticated }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -17,10 +17,19 @@ const CourseList = ({ allCourses, onEnroll }) => {
 
   const filteredCourses = allCourses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+                         (course.instructor?.name || course.instructor || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleEnrollClick = (course) => {
+    if (!isAuthenticated) {
+      alert('Please login to enroll in courses');
+      navigate('/login');
+      return;
+    }
+    onEnroll(course);
+  };
 
   if (selectedCourse) {
     return (
@@ -28,8 +37,8 @@ const CourseList = ({ allCourses, onEnroll }) => {
         course={selectedCourse} 
         onBack={() => setSelectedCourse(null)}
         onStartLearning={() => {
-          onEnroll(selectedCourse);
-          navigate('/learner/dashboard');
+          handleEnrollClick(selectedCourse);
+          setSelectedCourse(null);
         }}
       />
     );
@@ -68,7 +77,7 @@ const CourseList = ({ allCourses, onEnroll }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            Explore our complete course catalog
+            Explore our complete course catalog ({allCourses.length} courses available)
           </motion.p>
         </motion.div>
 
@@ -125,7 +134,7 @@ const CourseList = ({ allCourses, onEnroll }) => {
         >
           {filteredCourses.map((course, i) => (
             <motion.div
-              key={i}
+              key={course._id || i}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.9 + i * 0.05, duration: 0.4 }}

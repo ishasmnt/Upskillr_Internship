@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Users, BookOpen, Award, TrendingUp, Play, Quote, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../components/Button';
 import CourseCard from '../components/CourseCard';
 import ShinyText from '../components/ui/ShinyText';
+import { courseAPI } from '../services/api';
 import '../styles/Home.css';
 
-const HomePage = ({ allCourses }) => {
+const HomePage = ({ allCourses: propCourses }) => {
   const navigate = useNavigate();
+  const [courses, setCourses] = useState(propCourses || []);
+  const [loading, setLoading] = useState(false);
 
-   // Static Success Stories Data
+  useEffect(() => {
+    // If no courses passed as props, fetch from API
+    if (!propCourses || propCourses.length === 0) {
+      fetchCourses();
+    } else {
+      setCourses(propCourses);
+    }
+  }, [propCourses]);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await courseAPI.getAllCourses();
+      setCourses(data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Static Success Stories Data
   const successStories = [
     {
       name: "Rohan Deshmukh",
@@ -34,6 +58,14 @@ const HomePage = ({ allCourses }) => {
       image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
     }
   ];
+
+  // Calculate stats from real data
+  const stats = {
+    activeLearners: '50K+',
+    expertCourses: courses.length > 0 ? `${courses.length}+` : '500+',
+    topInstructors: '200+',
+    successRate: '95%'
+  };
 
   return (
     <div className="home-page">
@@ -105,10 +137,10 @@ const HomePage = ({ allCourses }) => {
         <div className="stats-container">
           <div className="stats-grid">
             {[
-              { value: '50K+', label: 'Active Learners', icon: Users },
-              { value: '500+', label: 'Expert Courses', icon: BookOpen },
-              { value: '200+', label: 'Top Instructors', icon: Award },
-              { value: '95%', label: 'Success Rate', icon: TrendingUp }
+              { value: stats.activeLearners, label: 'Active Learners', icon: Users },
+              { value: stats.expertCourses, label: 'Expert Courses', icon: BookOpen },
+              { value: stats.topInstructors, label: 'Top Instructors', icon: Award },
+              { value: stats.successRate, label: 'Success Rate', icon: TrendingUp }
             ].map((stat, i) => (
               <motion.div 
                 key={i} 
@@ -134,25 +166,38 @@ const HomePage = ({ allCourses }) => {
         <div className="featured-container">
           <div className="featured-header">
             <h2 className="featured-title">Featured Courses</h2>
-            <p className="featured-subtitle">Handpicked courses to accelerate your learning journey</p>
+            <p className="featured-subtitle">
+              Handpicked courses to accelerate your learning journey
+            </p>
           </div>
           
-          <div className="featured-grid">
-            {allCourses.slice(0, 4).map((course, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                whileHover={{ scale: 1.03 }}
-              >
-                <CourseCard 
-                  course={course}
-                  onEnroll={() => navigate('/courses')}
-                />
-              </motion.div>
-            ))}
-          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <p>Loading courses...</p>
+            </div>
+          ) : courses.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p style={{ color: '#6b7280' }}>No courses available yet</p>
+            </div>
+          ) : (
+            <div className="featured-grid">
+              {courses.slice(0, 4).map((course, i) => (
+                <motion.div
+                  key={course._id || i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  whileHover={{ scale: 1.03 }}
+                >
+                  <CourseCard 
+                    course={course}
+                    onEnroll={() => navigate('/courses')}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -232,7 +277,7 @@ const HomePage = ({ allCourses }) => {
         </div>
       </motion.section>
 
-      {/* NEW: Success Stories Section */}
+      {/* Success Stories Section */}
       <section className="success-stories-section" style={{ padding: '80px 0', background: '#272121' }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <div className="section-header text-center" style={{ marginBottom: '50px' }}>
@@ -260,16 +305,12 @@ const HomePage = ({ allCourses }) => {
                   </div>
                 </div>
                 <p style={{ color: '#f6e9e9', fontStyle: 'italic', lineHeight: '1.6' }}>"{story.text}"</p>
-                {/* <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', color: '#bebfc1ff', fontSize: '0.8rem' }}>
-                  <ExternalLink className="w-4 h-4 mr-1" /> Verified Learner
-                </div> */}
               </motion.div>
             ))}
           </div>
         </div>
       </section>
     </div>
-
   );
 };
 

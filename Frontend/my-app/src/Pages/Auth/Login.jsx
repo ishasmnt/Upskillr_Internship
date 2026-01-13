@@ -1,25 +1,43 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, BookOpen } from 'lucide-react';
+import { Mail, Lock, BookOpen, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../../components/Button';
+import { authAPI } from '../../services/api';
 import '../../styles/Login.css';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('learner');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simple authentication - in production, this would call an API
-    onLogin(role);
-    
-    if (role === 'learner') {
-      navigate('/learner/dashboard');
-    } else {
-      navigate('/instructor/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      // Call the API
+      const data = await authAPI.login({ email, password });
+      
+      // Store user data
+      localStorage.setItem('user', JSON.stringify(data));
+      
+      // Update parent component state
+      onLogin(data.role);
+      
+      // Navigate based on role
+      if (data.role === 'learner') {
+        navigate('/learner/dashboard');
+      } else {
+        navigate('/instructor/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,6 +95,28 @@ const Login = ({ onLogin }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: '#fee2e2',
+                border: '1px solid #ef4444',
+                borderRadius: '12px',
+                padding: '12px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#991b1b'
+              }}
+            >
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+
           <motion.form 
             onSubmit={handleSubmit} 
             className="login-form"
@@ -84,43 +124,6 @@ const Login = ({ onLogin }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
           >
-            <motion.div 
-              className="login-form-group"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
-            >
-              <label className="login-label">Login As</label>
-              <div className="login-role-buttons">
-                <motion.button
-                  type="button"
-                  onClick={() => setRole('learner')}
-                  className={`login-role-button ${
-                    role === 'learner' 
-                      ? 'login-role-button-active' 
-                      : 'login-role-button-inactive'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Learner
-                </motion.button>
-                <motion.button
-                  type="button"
-                  onClick={() => setRole('instructor')}
-                  className={`login-role-button ${
-                    role === 'instructor' 
-                      ? 'login-role-button-active' 
-                      : 'login-role-button-inactive'
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Instructor
-                </motion.button>
-              </div>
-            </motion.div>
-
             <motion.div 
               className="login-form-group"
               initial={{ opacity: 0, x: -20 }}
@@ -140,6 +143,7 @@ const Login = ({ onLogin }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="login-input"
+                  disabled={loading}
                 />
               </motion.div>
             </motion.div>
@@ -163,6 +167,7 @@ const Login = ({ onLogin }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="login-input"
+                  disabled={loading}
                 />
               </motion.div>
             </motion.div>
@@ -194,8 +199,13 @@ const Login = ({ onLogin }) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button type="submit" className="login-full-width" size="lg">
-                Sign In
+              <Button 
+                type="submit" 
+                className="login-full-width" 
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </motion.div>
           </motion.form>

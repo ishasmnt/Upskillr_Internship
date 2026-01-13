@@ -9,6 +9,13 @@ import '../../styles/LearnerDashboard.css';
 const Dashboard = ({ enrolledCourses }) => {
   const navigate = useNavigate();
 
+  // Calculate stats from enrolled courses
+  const totalCourses = enrolledCourses.length;
+  const completedCourses = enrolledCourses.filter(e => e.progress === 100).length;
+  const avgProgress = totalCourses > 0 
+    ? Math.round(enrolledCourses.reduce((sum, e) => sum + (e.progress || 0), 0) / totalCourses)
+    : 0;
+
   return (
     <motion.div 
       className="learner-dashboard-page"
@@ -30,7 +37,7 @@ const Dashboard = ({ enrolledCourses }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            Welcome back, Alex! 
+            Welcome back! 👋
           </motion.h1>
           <motion.p 
             className="learner-dashboard-welcome-subtitle"
@@ -50,10 +57,10 @@ const Dashboard = ({ enrolledCourses }) => {
           transition={{ delay: 0.5, duration: 0.5 }}
         >
           {[
-            { label: 'Courses Enrolled', value: enrolledCourses.length, icon: BookOpen },
-            { label: 'Hours Learned', value: '47', icon: Clock },
-            { label: 'Certificates', value: '2', icon: Award },
-            { label: 'Avg. Progress', value: '45%', icon: TrendingUp }
+            { label: 'Courses Enrolled', value: totalCourses, icon: BookOpen },
+            { label: 'Completed', value: completedCourses, icon: Award },
+            { label: 'In Progress', value: totalCourses - completedCourses, icon: Clock },
+            { label: 'Avg. Progress', value: `${avgProgress}%`, icon: TrendingUp }
           ].map((stat, i) => (
             <motion.div 
               key={i} 
@@ -106,59 +113,70 @@ const Dashboard = ({ enrolledCourses }) => {
             </motion.div>
           ) : (
             <div className="learner-dashboard-courses-list">
-              {enrolledCourses.map((course, i) => (
-                <motion.div 
-                  key={i} 
-                  className="learner-dashboard-course-card"
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
-                  whileHover={{ scale: 1.02, y: -3 }}
-                >
-                  <div className="learner-dashboard-course-header">
-                    <div className="learner-dashboard-course-content">
-                      <div className="learner-dashboard-course-title-row">
-                        <h3 className="learner-dashboard-course-title">{course.title}</h3>
-                        <span className="learner-dashboard-course-category">
-                          {course.category}
-                        </span>
+              {enrolledCourses.map((enrollment, i) => {
+                const course = enrollment.course;
+                return (
+                  <motion.div 
+                    key={enrollment._id || i} 
+                    className="learner-dashboard-course-card"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
+                    whileHover={{ scale: 1.02, y: -3 }}
+                  >
+                    <div className="learner-dashboard-course-header">
+                      <div className="learner-dashboard-course-content">
+                        <div className="learner-dashboard-course-title-row">
+                          <h3 className="learner-dashboard-course-title">{course?.title || 'Course'}</h3>
+                          <span className="learner-dashboard-course-category">
+                            {course?.category || 'General'}
+                          </span>
+                        </div>
+                        <p className="learner-dashboard-course-instructor">
+                          by {course?.instructor?.name || course?.instructor || 'Instructor'}
+                        </p>
                       </div>
-                      <p className="learner-dashboard-course-instructor">by {course.instructor}</p>
+                      <div className="learner-dashboard-course-actions">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button onClick={() => navigate(`/learner/course/${course?._id}/player`)}>
+                            <Play className="w-5 h-5" /> Resume Learning
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => navigate(`/learner/course/${course?._id}/assignments`)}
+                          >
+                            Assignments
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => navigate(`/learner/course/${course?._id}/notes`)}
+                          >
+                            Notes
+                          </Button>
+                        </motion.div>
+                      </div>
                     </div>
-                    <div className="learner-dashboard-course-actions">
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Button onClick={() => navigate(`/learner/course/${course.id}/player`)}>
-                          <Play className="w-5 h-5" /> Resume Learning
-                        </Button>
-                      </motion.div>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Button variant="ghost" onClick={() => navigate(`/learner/course/${course.id}/assignments`)}>
-                          Assignments
-                        </Button>
-                      </motion.div>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Button variant="ghost" onClick={() => navigate(`/learner/course/${course.id}/notes`)}>
-                          Notes
-                        </Button>
-                      </motion.div>
-                    </div>
-                  </div>
-                  
-                  <ProgressBar 
-                    progress={course.progress} 
-                    label={`Lesson ${course.currentLesson} of ${course.totalLessons}: ${course.nextLesson}`}
-                  />
-                </motion.div>
-              ))}
+                    
+                    <ProgressBar 
+                      progress={enrollment.progress || 0} 
+                      label={`Progress: ${enrollment.progress || 0}%`}
+                    />
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </motion.div>
@@ -180,10 +198,10 @@ const Dashboard = ({ enrolledCourses }) => {
           </motion.h2>
           <div className="learner-dashboard-achievements-grid">
             {[
-              { title: 'First Course', desc: 'Completed your first course', earned: true },
-              { title: 'Quick Learner', desc: 'Finished 3 courses in a month', earned: true },
-              { title: 'Consistency King', desc: 'Learned 7 days in a row', earned: false },
-              { title: 'Master Level', desc: 'Achieved 100% in 5 courses', earned: false }
+              { title: 'First Course', desc: 'Enrolled in your first course', earned: totalCourses > 0 },
+              { title: 'Quick Learner', desc: 'Completed 3 courses', earned: completedCourses >= 3 },
+              { title: 'Dedicated Student', desc: 'Enrolled in 5+ courses', earned: totalCourses >= 5 },
+              { title: 'Master Level', desc: 'Achieved 100% in 5 courses', earned: completedCourses >= 5 }
             ].map((badge, i) => (
               <motion.div 
                 key={i} 

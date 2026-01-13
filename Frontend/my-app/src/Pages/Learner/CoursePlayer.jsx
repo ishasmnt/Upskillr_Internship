@@ -1,44 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Video, CheckCircle, FileText, Download, ArrowLeft, Trophy } from 'lucide-react'; // Added Trophy
+import { Video, CheckCircle, FileText, Download, ArrowLeft, Trophy } from 'lucide-react';
 import Button from '../../components/Button';
 import ProgressBar from '../../components/ProgressBar';
-import FeedbackForm from './FeedbackForm'; // Import the UI component we created
+import FeedbackForm from './FeedbackForm';
+import { enrollmentAPI, moduleAPI } from '../../services/api';
 import '../../styles/CoursePlayer.css';
 
-const CoursePlayer = ({ enrolledCourses }) => {
+const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
   
-  const course = enrolledCourses.find(c => c.id === parseInt(courseId));
+  const enrollment = enrolledCourses.find(e => e.course?._id === courseId);
+  const course = enrollment?.course;
   
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(course?.currentLesson - 1 || 0);
-  const [completedLessons, setCompletedLessons] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+  const [completedModules, setCompletedModules] = useState(enrollment?.completedLessons || []);
+  const [progress, setProgress] = useState(enrollment?.progress || 0);
 
-  if (!course) {
+  useEffect(() => {
+    if (course) {
+      fetchModules();
+    }
+  }, [courseId]);
+
+  const fetchModules = async () => {
+    try {
+      setLoading(true);
+      const data = await moduleAPI.getModules(courseId);
+      setModules(data);
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+      // Fallback to lessons if modules not found
+      if (course?.lessons) {
+        setModules(course.lessons.map((lesson, idx) => ({
+          _id: idx,
+          title: lesson.title,
+          description: lesson.description,
+          resources: lesson.resources || []
+        })));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!enrollment || !course) {
     return (
       <div className="course-player-page">
         <div className="course-player-container" style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'rgb(17, 24, 39)', marginBottom: '1rem' }}>Course not found</h1>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'rgb(17, 24, 39)', marginBottom: '1rem' }}>
+            Course not found or not enrolled
+          </h1>
           <Button onClick={() => navigate('/learner/dashboard')}>Back to Dashboard</Button>
         </div>
       </div>
     );
   }
 
-  const currentLesson = course.lessons[currentLessonIndex];
+  const currentModule = modules[currentModuleIndex];
 
-  const markAsComplete = () => {
-    if (!completedLessons.includes(currentLessonIndex)) {
-      setCompletedLessons([...completedLessons, currentLessonIndex]);
+  const markAsComplete = async () => {
+    if (!completedModules.includes(currentModuleIndex)) {
+      const newCompleted = [...completedModules, currentModuleIndex];
+      setCompletedModules(newCompleted);
+      
+      // Calculate new progress
+      const newProgress = Math.round((newCompleted.length / modules.length) * 100);
+      setProgress(newProgress);
+
+      // Update backend
+      try {
+        await enrollmentAPI.updateProgress(courseId, {
+          progress: newProgress,
+          currentLesson: currentModuleIndex + 1,
+          completedLessons: newCompleted
+        });
+        if (onRefresh) await onRefresh();
+      } catch (error) {
+        console.error('Error updating progress:', error);
+      }
     }
-    if (currentLessonIndex < course.lessons.length - 1) {
-      setCurrentLessonIndex(currentLessonIndex + 1);
+    
+    // Move to next module if available
+    if (currentModuleIndex < modules.length - 1) {
+      setCurrentModuleIndex(currentModuleIndex + 1);
     }
   };
 
-  const progress = Math.round((completedLessons.length / course.lessons.length) * 100);
-  const isCourseComplete = completedLessons.length === course.lessons.length;
+  const isCourseComplete = completedModules.length === modules.length && modules.length > 0;
+
+  if (loading) {
+    return (
+      <div className="course-player-page">
+        <div className="course-player-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading course content...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="course-player-page">
@@ -60,43 +122,76 @@ const CoursePlayer = ({ enrolledCourses }) => {
                 <div className="course-completion-view" style={{ padding: '40px', textAlign: 'center' }}>
                    <FeedbackForm courseName={course.title} />
                 </div>
+              ) : modules.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                  <Video className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '8px' }}>
+                    No modules available yet
+                  </h3>
+                  <p style={{ color: '#6b7280' }}>
+                    The instructor is still creating content for this course.
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className="course-player-video-container">
-                    <Video className="course-player-video-icon" />
+                    {currentModule?.videoUrl ? (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={currentModule.videoUrl}
+                        title={currentModule.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{ borderRadius: '12px' }}
+                      />
+                    ) : (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        height: '100%',
+                        background: '#f3f4f6'
+                      }}>
+                        <Video className="course-player-video-icon" />
+                      </div>
+                    )}
                   </div>
                   <div className="course-player-content">
-                    <h1 className="course-player-title">{currentLesson.title}</h1>
-                    <p className="course-player-description">{currentLesson.description}</p>
+                    <h1 className="course-player-title">{currentModule?.title}</h1>
+                    <p className="course-player-description">{currentModule?.description}</p>
                     
                     <div className="course-player-actions">
                       <Button onClick={markAsComplete}>
                         <CheckCircle className="w-5 h-5" /> Mark as Complete
                       </Button>
-                      {currentLessonIndex > 0 && (
-                        <Button variant="ghost" onClick={() => setCurrentLessonIndex(currentLessonIndex - 1)}>
+                      {currentModuleIndex > 0 && (
+                        <Button variant="ghost" onClick={() => setCurrentModuleIndex(currentModuleIndex - 1)}>
                           Previous
                         </Button>
                       )}
-                      {currentLessonIndex < course.lessons.length - 1 && (
-                        <Button variant="ghost" onClick={() => setCurrentLessonIndex(currentLessonIndex + 1)}>
+                      {currentModuleIndex < modules.length - 1 && (
+                        <Button variant="ghost" onClick={() => setCurrentModuleIndex(currentModuleIndex + 1)}>
                           Next
                         </Button>
                       )}
                     </div>
 
-                    <div className="course-player-resources">
-                      <h3 className="course-player-resources-title">Resources</h3>
-                      <div className="course-player-resources-list">
-                        {currentLesson.resources.map((resource, i) => (
-                          <div key={i} className="course-player-resource-item">
-                            <FileText className="course-player-resource-icon" />
-                            <span className="course-player-resource-text">{resource}</span>
-                            <Download className="course-player-resource-download" />
-                          </div>
-                        ))}
+                    {currentModule?.resources && currentModule.resources.length > 0 && (
+                      <div className="course-player-resources">
+                        <h3 className="course-player-resources-title">Resources</h3>
+                        <div className="course-player-resources-list">
+                          {currentModule.resources.map((resource, i) => (
+                            <div key={i} className="course-player-resource-item">
+                              <FileText className="course-player-resource-icon" />
+                              <span className="course-player-resource-text">{resource}</span>
+                              <Download className="course-player-resource-download" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </>
               )}
@@ -109,7 +204,7 @@ const CoursePlayer = ({ enrolledCourses }) => {
               <h3 className="course-player-progress-title">Course Progress</h3>
               <ProgressBar progress={progress} showLabel={false} />
               <p className="course-player-progress-text">
-                {completedLessons.length} of {course.lessons.length} lessons completed
+                {completedModules.length} of {modules.length} modules completed
               </p>
               {isCourseComplete && (
                 <div style={{ marginTop: '10px', color: '#059669', display: 'flex', alignItems: 'center', fontSize: '0.875rem', fontWeight: '600' }}>
@@ -121,31 +216,37 @@ const CoursePlayer = ({ enrolledCourses }) => {
             <div className="course-player-content-card">
               <h3 className="course-player-content-title">Course Content</h3>
               <div className="course-player-lessons-list">
-                {course.lessons.map((lesson, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setCurrentLessonIndex(i)}
-                    className={`course-player-lesson-item ${
-                      i === currentLessonIndex 
-                        ? 'course-player-lesson-item-active' 
-                        : completedLessons.includes(i)
-                        ? 'course-player-lesson-item-completed'
-                        : 'course-player-lesson-item-default'
-                    }`}
-                  >
-                    <div className="course-player-lesson-content">
-                      {completedLessons.includes(i) ? (
-                        <CheckCircle className="course-player-lesson-check" />
-                      ) : (
-                        <div className="course-player-lesson-circle"></div>
-                      )}
-                      <div className="course-player-lesson-info">
-                        <div className="course-player-lesson-number">Lesson {i + 1}</div>
-                        <div className="course-player-lesson-name">{lesson.title}</div>
+                {modules.length === 0 ? (
+                  <p style={{ padding: '16px', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                    No modules available
+                  </p>
+                ) : (
+                  modules.map((module, i) => (
+                    <div
+                      key={module._id || i}
+                      onClick={() => setCurrentModuleIndex(i)}
+                      className={`course-player-lesson-item ${
+                        i === currentModuleIndex 
+                          ? 'course-player-lesson-item-active' 
+                          : completedModules.includes(i)
+                          ? 'course-player-lesson-item-completed'
+                          : 'course-player-lesson-item-default'
+                      }`}
+                    >
+                      <div className="course-player-lesson-content">
+                        {completedModules.includes(i) ? (
+                          <CheckCircle className="course-player-lesson-check" />
+                        ) : (
+                          <div className="course-player-lesson-circle"></div>
+                        )}
+                        <div className="course-player-lesson-info">
+                          <div className="course-player-lesson-number">Module {i + 1}</div>
+                          <div className="course-player-lesson-name">{module.title}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

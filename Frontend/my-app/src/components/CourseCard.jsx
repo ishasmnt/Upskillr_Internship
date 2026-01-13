@@ -4,11 +4,22 @@ import Button from './Button';
 import '../styles/CourseCard.css';
 
 const CourseCard = ({ course, enrolled = false, onEnroll, onResume, className = '' }) => {
+  // Handle both backend data structure and frontend data structure
+  const instructorName = course?.instructor?.name || course?.instructor || 'Instructor';
+  const courseImage = course?.image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop';
+  
   return (
     <div className={`course-card ${className}`}>
       <div className="course-card-image-container">
         <div className="course-card-image-inner">
-          <img src={course.image} alt={course.title} className="course-card-image" />
+          <img 
+            src={courseImage} 
+            alt={course.title} 
+            className="course-card-image"
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop';
+            }}
+          />
         </div>
         {enrolled && (
           <div className="course-card-enrolled-badge">
@@ -16,34 +27,40 @@ const CourseCard = ({ course, enrolled = false, onEnroll, onResume, className = 
           </div>
         )}
         <div className="course-card-category-badge">
-          {course.category}
+          {course.category || 'General'}
         </div>
       </div>
       <div className="course-card-content">
         <h3 className="course-card-title">
           {course.title}
         </h3>
-        <p className="course-card-description">{course.description}</p>
+        <p className="course-card-description">
+          {course.description || 'No description available'}
+        </p>
         
         <div className="course-card-instructor">
           <Users className="w-4 h-4" />
-          <span>by {course.instructor}</span>
+          <span>by {instructorName}</span>
         </div>
 
         <div className="course-card-meta">
           <div className="course-card-meta-left">
             <div className="course-card-meta-item">
               <Clock className="w-4 h-4 text-blue-400" />
-              <span className='text-blue-400'>{course.duration}</span>
+              <span className='text-blue-400'>{course.duration || 'N/A'}</span>
             </div>
             <div className="course-card-meta-item">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold text-yellow-400">{course.rating}</span>
+              <span className="font-semibold text-yellow-400">
+                {course.rating || '0.0'}
+              </span>
             </div>
           </div>
-          {!enrolled && course.price && (
+          {!enrolled && (
             <div className="course-card-price">
-              <span className="course-card-price-value">Free</span>
+              <span className="course-card-price-value">
+                {course.price === 0 || !course.price ? 'Free' : `$${course.price}`}
+              </span>
             </div>
           )}
         </div>

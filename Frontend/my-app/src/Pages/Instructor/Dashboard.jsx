@@ -3,41 +3,50 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Users, BookOpen, TrendingUp, Star, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../../components/Button';
+import { courseAPI } from '../../services/api';
 import '../../styles/Dashboard.css';
 
-const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse }) => {
+const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse, onRefresh }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [newCourse, setNewCourse] = useState({
     title: '',
     description: '',
     category: 'Development',
     duration: '',
-    price: ''
+    price: 0
   });
 
-  const handleCreateCourse = () => {
-    const course = {
-      ...newCourse,
-      id: Date.now(),
-      rating: 0,
-      students: 0,
-      instructor: 'You',
-      status: 'Draft',
-      lessons: [],
-      modules: [],
-      assignments: [],
-      notes: []
-    };
-    onCreateCourse(course);
-    setNewCourse({ title: '', description: '', category: 'Development', duration: '', price: '' });
-    setShowModal(false);
+  const handleCreateCourse = async () => {
+    if (!newCourse.title || !newCourse.description) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onCreateCourse(newCourse);
+      setNewCourse({ 
+        title: '', 
+        description: '', 
+        category: 'Development', 
+        duration: '', 
+        price: 0 
+      });
+      setShowModal(false);
+      if (onRefresh) await onRefresh();
+    } catch (error) {
+      console.error('Error creating course:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalStudents = instructorCourses.reduce((sum, course) => sum + course.students, 0);
+  const totalStudents = instructorCourses.reduce((sum, course) => sum + (course.students || 0), 0);
   const publishedCourses = instructorCourses.filter(c => c.status === 'Published').length;
   const avgRating = instructorCourses.length > 0 
-    ? (instructorCourses.reduce((sum, c) => sum + c.rating, 0) / instructorCourses.length).toFixed(1)
+    ? (instructorCourses.reduce((sum, c) => sum + (c.rating || 0), 0) / instructorCourses.length).toFixed(1)
     : 0;
 
   return (
@@ -93,7 +102,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
           {[
             { label: 'Total Students', value: totalStudents, icon: Users, trend: '+12%' },
             { label: 'Active Courses', value: publishedCourses, icon: BookOpen, trend: `${instructorCourses.length} total` },
-            { label: 'Course Views', value: '12.4K', icon: TrendingUp, trend: '+18%' },
+            { label: 'Total Courses', value: instructorCourses.length, icon: TrendingUp, trend: 'All courses' },
             { label: 'Avg. Rating', value: avgRating || 'N/A', icon: Star, trend: publishedCourses > 0 ? 'Excellent' : 'No ratings' }
           ].map((stat, i) => (
             <motion.div 
@@ -153,7 +162,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
             <div className="dashboard-courses-list">
               {instructorCourses.map((course, i) => (
                 <motion.div 
-                  key={i} 
+                  key={course._id || i} 
                   className="dashboard-course-card"
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -175,11 +184,11 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                       <div className="dashboard-course-meta">
                         <div className="dashboard-course-meta-item">
                           <Users className="w-4 h-4" />
-                          <span>{course.students} students</span>
+                          <span>{course.students || 0} students</span>
                         </div>
                         <div className="dashboard-course-meta-item">
                           <BookOpen className="w-4 h-4" />
-                          <span>{course.duration}</span>
+                          <span>{course.duration || 'N/A'}</span>
                         </div>
                         {course.rating > 0 && (
                           <div className="dashboard-course-meta-item">
@@ -194,7 +203,10 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Button variant="ghost" onClick={() => navigate(`/instructor/course/${course.id}/manage`)}>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => navigate(`/instructor/course/${course._id}/manage`)}
+                        >
                           <Edit className="w-4 h-4" /> Manage
                         </Button>
                       </motion.div>
@@ -219,7 +231,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
       {showModal && (
         <motion.div 
           className="dashboard-modal-overlay"
-          onClick={() => setShowModal(false)}
+          onClick={() => !loading && setShowModal(false)}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -245,13 +257,14 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.3 }}
               >
-                <label className="dashboard-modal-label">Course Title</label>
+                <label className="dashboard-modal-label">Course Title *</label>
                 <input 
                   type="text" 
                   placeholder="Enter course title"
                   value={newCourse.title}
                   onChange={(e) => setNewCourse({...newCourse, title: e.target.value})}
                   className="dashboard-modal-input"
+                  disabled={loading}
                 />
               </motion.div>
               <motion.div
@@ -264,6 +277,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                   value={newCourse.category}
                   onChange={(e) => setNewCourse({...newCourse, category: e.target.value})}
                   className="dashboard-modal-input"
+                  disabled={loading}
                 >
                   <option>Development</option>
                   <option>Design</option>
@@ -277,13 +291,14 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.3 }}
               >
-                <label className="dashboard-modal-label">Description</label>
+                <label className="dashboard-modal-label">Description *</label>
                 <textarea 
                   placeholder="Describe your course"
                   rows="4"
                   value={newCourse.description}
                   onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
                   className="dashboard-modal-textarea"
+                  disabled={loading}
                 ></textarea>
               </motion.div>
               <motion.div 
@@ -300,18 +315,9 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                     value={newCourse.duration}
                     onChange={(e) => setNewCourse({...newCourse, duration: e.target.value})}
                     className="dashboard-modal-input"
+                    disabled={loading}
                   />
                 </div>
-                {/* <div>
-                  <label className="dashboard-modal-label">Price ($)</label>
-                  <input 
-                    type="number" 
-                    placeholder="49"
-                    value={newCourse.price}
-                    onChange={(e) => setNewCourse({...newCourse, price: e.target.value})}
-                    className="dashboard-modal-input"
-                  />
-                </div> */}
               </motion.div>
               <motion.div 
                 className="dashboard-modal-actions"
@@ -323,15 +329,23 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button className="dashboard-modal-button-flex" onClick={handleCreateCourse}>
-                    Create Course
+                  <Button 
+                    className="dashboard-modal-button-flex" 
+                    onClick={handleCreateCourse}
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating...' : 'Create Course'}
                   </Button>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button variant="ghost" onClick={() => setShowModal(false)}>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setShowModal(false)}
+                    disabled={loading}
+                  >
                     Cancel
                   </Button>
                 </motion.div>

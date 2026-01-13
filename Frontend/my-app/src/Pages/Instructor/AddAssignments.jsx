@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, FileText, Trash2, Calendar, Save, ArrowLeft } from 'lucide-react';
 import Button from '../../components/Button';
+import { assignmentAPI } from '../../services/api';
 import '../../styles/AddAssignments.css';
 
-const AddAssignments = ({ instructorCourses }) => {
+const AddAssignments = ({ instructorCourses, onRefresh }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
   
-  const course = instructorCourses.find(c => c.id === parseInt(courseId));
+  const course = instructorCourses.find(c => c._id === courseId);
   
-  const [assignments, setAssignments] = useState(course?.assignments || []);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
     title: '',
     description: '',
@@ -20,6 +23,24 @@ const AddAssignments = ({ instructorCourses }) => {
     instructions: '',
     type: 'Written'
   });
+
+  useEffect(() => {
+    if (course) {
+      fetchAssignments();
+    }
+  }, [courseId]);
+
+  const fetchAssignments = async () => {
+    try {
+      setLoading(true);
+      const data = await assignmentAPI.getAssignments(courseId);
+      setAssignments(data);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -32,22 +53,56 @@ const AddAssignments = ({ instructorCourses }) => {
     );
   }
 
-  const addAssignment = () => {
-    if (newAssignment.title && newAssignment.description) {
-      setAssignments([...assignments, { ...newAssignment, id: Date.now(), submissions: 0 }]);
-      setNewAssignment({ title: '', description: '', dueDate: '', totalMarks: '', instructions: '', type: 'Written' });
+  const addAssignment = async () => {
+    if (!newAssignment.title || !newAssignment.description) {
+      alert('Please fill in required fields');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await assignmentAPI.createAssignment(courseId, newAssignment);
+      await fetchAssignments();
+      setNewAssignment({ 
+        title: '', 
+        description: '', 
+        dueDate: '', 
+        totalMarks: '', 
+        instructions: '', 
+        type: 'Written' 
+      });
       setShowAssignmentModal(false);
+      alert('Assignment added successfully!');
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      alert('Failed to create assignment');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const deleteAssignment = (assignmentId) => {
-    setAssignments(assignments.filter(a => a.id !== assignmentId));
+  const deleteAssignment = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this assignment?')) return;
+
+    try {
+      await assignmentAPI.deleteAssignment(assignmentId);
+      await fetchAssignments();
+      alert('Assignment deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      alert('Failed to delete assignment');
+    }
   };
 
-  const handleSave = () => {
-    alert('Assignments saved successfully!');
-    navigate(`/instructor/course/${courseId}/manage`);
-  };
+  if (loading) {
+    return (
+      <div className="add-assignments-page">
+        <div className="add-assignments-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="add-assignments-page">
@@ -66,9 +121,6 @@ const AddAssignments = ({ instructorCourses }) => {
               <p className="add-assignments-subtitle">Course: {course.title}</p>
             </div>
             <div className="add-assignments-actions">
-              <Button onClick={handleSave}>
-                <Save className="w-5 h-5" /> Save All Assignments
-              </Button>
               <Button onClick={() => setShowAssignmentModal(true)}>
                 <Plus className="w-5 h-5" /> Add New Assignment
               </Button>
@@ -88,7 +140,7 @@ const AddAssignments = ({ instructorCourses }) => {
           ) : (
             <div className="add-assignments-list">
               {assignments.map((assignment, index) => (
-                <div key={assignment.id} className="add-assignments-item">
+                <div key={assignment._id} className="add-assignments-item">
                   <div className="add-assignments-item-header">
                     <div className="add-assignments-item-content">
                       <div className="add-assignments-item-title-row">
@@ -114,11 +166,7 @@ const AddAssignments = ({ instructorCourses }) => {
                       <div className="add-assignments-item-details">
                         <div className="add-assignments-item-detail">
                           <Calendar className="w-4 h-4 text-purple-600" />
-                          <span>Due: {assignment.dueDate || 'No deadline'}</span>
-                        </div>
-                        <div className="add-assignments-item-detail">
-                          <FileText className="w-4 h-4 text-purple-600" />
-                          <span>{assignment.submissions || 0} submissions</span>
+                          <span>Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No deadline'}</span>
                         </div>
                       </div>
 
@@ -131,7 +179,7 @@ const AddAssignments = ({ instructorCourses }) => {
                     </div>
                     
                     <button
-                      onClick={() => deleteAssignment(assignment.id)}
+                      onClick={() => deleteAssignment(assignment._id)}
                       className="add-assignments-delete-button"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -169,7 +217,7 @@ const AddAssignments = ({ instructorCourses }) => {
 
       {/* Add Assignment Modal */}
       {showAssignmentModal && (
-        <div className="add-assignments-modal-overlay" onClick={() => setShowAssignmentModal(false)}>
+        <div className="add-assignments-modal-overlay" onClick={() => !saving && setShowAssignmentModal(false)}>
           <div className="add-assignments-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2 className="add-assignments-modal-title">Create New Assignment</h2>
             <div className="add-assignments-modal-form">
@@ -181,6 +229,7 @@ const AddAssignments = ({ instructorCourses }) => {
                   value={newAssignment.title}
                   onChange={(e) => setNewAssignment({...newAssignment, title: e.target.value})}
                   className="add-assignments-modal-input"
+                  disabled={saving}
                 />
               </div>
 
@@ -190,6 +239,7 @@ const AddAssignments = ({ instructorCourses }) => {
                   value={newAssignment.type}
                   onChange={(e) => setNewAssignment({...newAssignment, type: e.target.value})}
                   className="add-assignments-modal-input"
+                  disabled={saving}
                 >
                   <option>Written</option>
                   <option>Project</option>
@@ -207,6 +257,7 @@ const AddAssignments = ({ instructorCourses }) => {
                   value={newAssignment.description}
                   onChange={(e) => setNewAssignment({...newAssignment, description: e.target.value})}
                   className="add-assignments-modal-textarea"
+                  disabled={saving}
                 ></textarea>
               </div>
 
@@ -218,6 +269,7 @@ const AddAssignments = ({ instructorCourses }) => {
                   value={newAssignment.instructions}
                   onChange={(e) => setNewAssignment({...newAssignment, instructions: e.target.value})}
                   className="add-assignments-modal-textarea"
+                  disabled={saving}
                 ></textarea>
               </div>
 
@@ -229,6 +281,7 @@ const AddAssignments = ({ instructorCourses }) => {
                     value={newAssignment.dueDate}
                     onChange={(e) => setNewAssignment({...newAssignment, dueDate: e.target.value})}
                     className="add-assignments-modal-input"
+                    disabled={saving}
                   />
                 </div>
                 <div>
@@ -239,15 +292,24 @@ const AddAssignments = ({ instructorCourses }) => {
                     value={newAssignment.totalMarks}
                     onChange={(e) => setNewAssignment({...newAssignment, totalMarks: e.target.value})}
                     className="add-assignments-modal-input"
+                    disabled={saving}
                   />
                 </div>
               </div>
 
               <div className="add-assignments-modal-actions">
-                <Button className="add-assignments-modal-button-flex" onClick={addAssignment}>
-                  <Plus className="w-5 h-5" /> Create Assignment
+                <Button 
+                  className="add-assignments-modal-button-flex" 
+                  onClick={addAssignment}
+                  disabled={saving}
+                >
+                  <Plus className="w-5 h-5" /> {saving ? 'Creating...' : 'Create Assignment'}
                 </Button>
-                <Button variant="ghost" onClick={() => setShowAssignmentModal(false)}>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowAssignmentModal(false)}
+                  disabled={saving}
+                >
                   Cancel
                 </Button>
               </div>

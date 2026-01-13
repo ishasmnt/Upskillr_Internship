@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, BookOpen } from 'lucide-react';
+import { Mail, Lock, User, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Button from '../../components/Button';
+import { authAPI } from '../../services/api';
 import '../../styles/Register.css';
 
 const Register = () => {
@@ -11,17 +12,50 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('learner');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
+    // Validation
     if (password !== confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
       return;
     }
-    // Registration logic here
-    alert('Registration successful! Please login.');
-    navigate('/login');
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Call the API
+      const data = await authAPI.register({
+        name,
+        email,
+        password,
+        role,
+      });
+
+      // Show success message
+      alert('Registration successful! Please login.');
+      
+      // Redirect to login
+      navigate('/login');
+    } catch (err) {
+      setError(
+        err.response?.data?.message || 
+        err.response?.data?.errors?.[0]?.msg ||
+        'Registration failed. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,6 +112,28 @@ const Register = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: '#fee2e2',
+                border: '1px solid #ef4444',
+                borderRadius: '12px',
+                padding: '12px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#991b1b'
+              }}
+            >
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+
           <motion.form 
             onSubmit={handleSubmit} 
             className="register-form"
@@ -141,6 +197,7 @@ const Register = () => {
                   onChange={(e) => setName(e.target.value)}
                   required
                   className="register-input"
+                  disabled={loading}
                 />
               </motion.div>
             </motion.div>
@@ -164,6 +221,7 @@ const Register = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="register-input"
+                  disabled={loading}
                 />
               </motion.div>
             </motion.div>
@@ -187,8 +245,12 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="register-input"
+                  disabled={loading}
                 />
               </motion.div>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '4px' }}>
+                Must be at least 6 characters
+              </p>
             </motion.div>
 
             <motion.div 
@@ -210,8 +272,15 @@ const Register = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="register-input"
+                  disabled={loading}
                 />
               </motion.div>
+              {confirmPassword && password === confirmPassword && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#059669', fontSize: '0.75rem', marginTop: '4px' }}>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Passwords match</span>
+                </div>
+              )}
             </motion.div>
 
             <motion.label 
@@ -233,8 +302,13 @@ const Register = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button type="submit" className="register-full-width" size="lg">
-                Create Account
+              <Button 
+                type="submit" 
+                className="register-full-width" 
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </motion.div>
           </motion.form>

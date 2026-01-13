@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Video, FileText, Trash2, Upload, Save, ArrowLeft } from 'lucide-react';
 import Button from '../../components/Button';
+import { moduleAPI } from '../../services/api';
 import '../../styles/AddModules.css';
 
-const AddModules = ({ instructorCourses }) => {
+const AddModules = ({ instructorCourses, onRefresh }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
   
-  const course = instructorCourses.find(c => c.id === parseInt(courseId));
+  const course = instructorCourses.find(c => c._id === courseId);
   
-  const [modules, setModules] = useState(course?.modules || []);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModuleModal, setShowModuleModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [newModule, setNewModule] = useState({
     title: '',
     description: '',
@@ -19,6 +22,24 @@ const AddModules = ({ instructorCourses }) => {
     duration: '',
     resources: []
   });
+
+  useEffect(() => {
+    if (course) {
+      fetchModules();
+    }
+  }, [courseId]);
+
+  const fetchModules = async () => {
+    try {
+      setLoading(true);
+      const data = await moduleAPI.getModules(courseId);
+      setModules(data);
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -31,22 +52,67 @@ const AddModules = ({ instructorCourses }) => {
     );
   }
 
-  const addModule = () => {
-    if (newModule.title && newModule.description) {
-      setModules([...modules, { ...newModule, id: Date.now() }]);
+  const addModule = async () => {
+    if (!newModule.title || !newModule.description) {
+      alert('Please fill in required fields');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await moduleAPI.createModule(courseId, newModule);
+      await fetchModules();
       setNewModule({ title: '', description: '', videoUrl: '', duration: '', resources: [] });
       setShowModuleModal(false);
+      alert('Module added successfully!');
+    } catch (error) {
+      console.error('Error creating module:', error);
+      alert('Failed to create module');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const deleteModule = (moduleId) => {
-    setModules(modules.filter(m => m.id !== moduleId));
+  const deleteModule = async (moduleId) => {
+    if (!window.confirm('Are you sure you want to delete this module?')) return;
+
+    try {
+      await moduleAPI.deleteModule(moduleId);
+      await fetchModules();
+      alert('Module deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting module:', error);
+      alert('Failed to delete module');
+    }
   };
 
-  const handleSave = () => {
-    alert('Modules saved successfully!');
-    navigate(`/instructor/course/${courseId}/manage`);
+  const addResource = () => {
+    const input = document.getElementById('resourceInput');
+    if (input.value.trim()) {
+      setNewModule({
+        ...newModule,
+        resources: [...(newModule.resources || []), input.value.trim()]
+      });
+      input.value = '';
+    }
   };
+
+  const removeResource = (index) => {
+    setNewModule({
+      ...newModule,
+      resources: newModule.resources.filter((_, i) => i !== index)
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="add-modules-page">
+        <div className="add-modules-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading modules...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="add-modules-page">
@@ -65,9 +131,6 @@ const AddModules = ({ instructorCourses }) => {
               <p className="add-modules-subtitle">Course: {course.title}</p>
             </div>
             <div className="add-modules-actions">
-              <Button onClick={handleSave}>
-                <Save className="w-5 h-5" /> Save All Modules
-              </Button>
               <Button onClick={() => setShowModuleModal(true)}>
                 <Plus className="w-5 h-5" /> Add New Module
               </Button>
@@ -87,7 +150,7 @@ const AddModules = ({ instructorCourses }) => {
           ) : (
             <div className="add-modules-list">
               {modules.map((module, index) => (
-                <div key={module.id} className="add-modules-item">
+                <div key={module._id} className="add-modules-item">
                   <div className="add-modules-item-header">
                     <div className="add-modules-item-content">
                       <div className="add-modules-item-title-row">
@@ -124,7 +187,7 @@ const AddModules = ({ instructorCourses }) => {
                     </div>
                     
                     <button
-                      onClick={() => deleteModule(module.id)}
+                      onClick={() => deleteModule(module._id)}
                       className="add-modules-delete-button"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -162,7 +225,7 @@ const AddModules = ({ instructorCourses }) => {
 
       {/* Add Module Modal */}
       {showModuleModal && (
-        <div className="add-modules-modal-overlay" onClick={() => setShowModuleModal(false)}>
+        <div className="add-modules-modal-overlay" onClick={() => !saving && setShowModuleModal(false)}>
           <div className="add-modules-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2 className="add-modules-modal-title">Add New Module</h2>
             <div className="add-modules-modal-form">
@@ -174,6 +237,7 @@ const AddModules = ({ instructorCourses }) => {
                   value={newModule.title}
                   onChange={(e) => setNewModule({...newModule, title: e.target.value})}
                   className="add-modules-modal-input"
+                  disabled={saving}
                 />
               </div>
               
@@ -185,6 +249,7 @@ const AddModules = ({ instructorCourses }) => {
                   value={newModule.description}
                   onChange={(e) => setNewModule({...newModule, description: e.target.value})}
                   className="add-modules-modal-textarea"
+                  disabled={saving}
                 ></textarea>
               </div>
 
@@ -196,6 +261,7 @@ const AddModules = ({ instructorCourses }) => {
                   value={newModule.videoUrl}
                   onChange={(e) => setNewModule({...newModule, videoUrl: e.target.value})}
                   className="add-modules-modal-input"
+                  disabled={saving}
                 />
                 <p className="add-modules-modal-help-text">YouTube, Vimeo, or direct video link</p>
               </div>
@@ -208,6 +274,7 @@ const AddModules = ({ instructorCourses }) => {
                   value={newModule.duration}
                   onChange={(e) => setNewModule({...newModule, duration: e.target.value})}
                   className="add-modules-modal-input"
+                  disabled={saving}
                 />
               </div>
 
@@ -219,19 +286,12 @@ const AddModules = ({ instructorCourses }) => {
                     placeholder="Add resource name"
                     id="resourceInput"
                     className="add-modules-modal-resource-input"
+                    disabled={saving}
                   />
                   <Button 
                     variant="ghost"
-                    onClick={() => {
-                      const input = document.getElementById('resourceInput');
-                      if (input.value) {
-                        setNewModule({
-                          ...newModule, 
-                          resources: [...(newModule.resources || []), input.value]
-                        });
-                        input.value = '';
-                      }
-                    }}
+                    onClick={addResource}
+                    disabled={saving}
                   >
                     <Plus className="w-4 h-4" /> Add
                   </Button>
@@ -242,11 +302,9 @@ const AddModules = ({ instructorCourses }) => {
                       <span key={i} className="add-modules-modal-resource-tag">
                         {resource}
                         <button
-                          onClick={() => setNewModule({
-                            ...newModule,
-                            resources: newModule.resources.filter((_, idx) => idx !== i)
-                          })}
+                          onClick={() => removeResource(i)}
                           className="add-modules-modal-resource-remove"
+                          disabled={saving}
                         >
                           ×
                         </button>
@@ -257,10 +315,18 @@ const AddModules = ({ instructorCourses }) => {
               </div>
 
               <div className="add-modules-modal-actions">
-                <Button className="add-modules-modal-button-flex" onClick={addModule}>
-                  <Plus className="w-5 h-5" /> Add Module
+                <Button 
+                  className="add-modules-modal-button-flex" 
+                  onClick={addModule}
+                  disabled={saving}
+                >
+                  <Plus className="w-5 h-5" /> {saving ? 'Adding...' : 'Add Module'}
                 </Button>
-                <Button variant="ghost" onClick={() => setShowModuleModal(false)}>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setShowModuleModal(false)}
+                  disabled={saving}
+                >
                   Cancel
                 </Button>
               </div>
