@@ -63,13 +63,7 @@ const CourseList = ({ allCourses, onEnroll, isAuthenticated }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <ShinyText
-              text="Browse All Courses"
-              speed={2.5}
-              color="#e8d46d"
-              shineColor="#c77e00"
-              className="course-list-title"
-            />
+           Browse All Courses
           </motion.h1>
           <motion.p 
             className="course-list-subtitle"
