@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, BookOpen, TrendingUp, Star, Edit, Trash2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, Users, BookOpen, TrendingUp, Star, Edit, Trash2, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../../components/Button';
 import { courseAPI } from '../../services/api';
+import socketService from '../../services/socket';
 import '../../styles/Dashboard.css';
 
-const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse, onRefresh }) => {
+const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse, onRefresh, realtimeUpdates }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState(instructorCourses || []);
+  const [liveUpdates, setLiveUpdates] = useState([]);
+  const [showUpdates, setShowUpdates] = useState(true);
   const [newCourse, setNewCourse] = useState({
     title: '',
     description: '',
@@ -17,6 +21,54 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
     duration: '',
     price: 0
   });
+
+  useEffect(() => {
+    setCourses(instructorCourses || []);
+  }, [instructorCourses]);
+
+  // Listen for real-time student enrollments
+  useEffect(() => {
+    socketService.onStudentEnrolled((data) => {
+      console.log('🎓 Student enrolled:', data);
+      setCourses(prev =>
+        prev.map(c =>
+          c._id === data.courseId
+            ? { ...c, students: (c.students || 0) + 1 }
+            : c
+        )
+      );
+      addLiveUpdate('New student enrolled!');
+    });
+
+    socketService.onAssignmentSubmitted((data) => {
+      addLiveUpdate(`Assignment submitted in ${data.courseId}`);
+    });
+
+    socketService.onFeedbackSubmitted((data) => {
+      addLiveUpdate('New feedback received!');
+    });
+
+    socketService.onModuleAdded((module) => {
+      if (courses.some(c => c._id === module.course)) {
+        addLiveUpdate(`Module added: ${module.title}`);
+      }
+    });
+
+    return () => {
+      socketService.off('student-enrolled');
+      socketService.off('assignment-submitted');
+      socketService.off('feedback-submitted');
+      socketService.off('module-added');
+    };
+  }, [courses]);
+
+  const addLiveUpdate = (message) => {
+    const id = Date.now();
+    setLiveUpdates(prev => [
+      { id, message, timestamp: new Date() },
+      ...prev.slice(0, 4)
+    ]);
+  };
 
   const handleCreateCourse = async () => {
     if (!newCourse.title || !newCourse.description) {
@@ -27,15 +79,17 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
     setLoading(true);
     try {
       await onCreateCourse(newCourse);
-      setNewCourse({ 
-        title: '', 
-        description: '', 
-        category: 'Development', 
-        duration: '', 
-        price: 0 
+      setNewCourse({
+        title: '',
+        description: '',
+        category: 'Development',
+        duration: '',
+        price: 0
       });
       setShowModal(false);
-      if (onRefresh) await onRefresh();
+      
+      // Notify via socket
+      socketService.emit('course-created-by-me', newCourse);
     } catch (error) {
       console.error('Error creating course:', error);
     } finally {
@@ -43,14 +97,14 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
     }
   };
 
-  const totalStudents = instructorCourses.reduce((sum, course) => sum + (course.students || 0), 0);
-  const publishedCourses = instructorCourses.filter(c => c.status === 'Published').length;
-  const avgRating = instructorCourses.length > 0 
-    ? (instructorCourses.reduce((sum, c) => sum + (c.rating || 0), 0) / instructorCourses.length).toFixed(1)
+  const totalStudents = courses.reduce((sum, course) => sum + (course.students || 0), 0);
+  const publishedCourses = courses.filter(c => c.status === 'Published').length;
+  const avgRating = courses.length > 0
+    ? (courses.reduce((sum, c) => sum + (c.rating || 0), 0) / courses.length).toFixed(1)
     : 0;
 
   return (
-    <motion.div 
+    <motion.div
       className="dashboard-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -58,14 +112,14 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
     >
       <div className="dashboard-container">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="dashboard-header"
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <div className="dashboard-header-content">
-            <motion.h1 
+            <motion.h1
               className="dashboard-title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -73,7 +127,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
             >
               Instructor Dashboard
             </motion.h1>
-            <motion.p 
+            <motion.p
               className="dashboard-subtitle"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -82,18 +136,74 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
               Manage your courses and track your impact
             </motion.p>
           </div>
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button size="lg" onClick={() => setShowModal(true)}>
               <Plus className="w-5 h-5" /> Create New Course
             </Button>
           </motion.div>
         </motion.div>
 
+        {/* Live Updates Panel */}
+        <AnimatePresence>
+          {showUpdates && liveUpdates.length > 0 && (
+            <motion.div
+              className="dashboard-live-updates"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              style={{
+                background: '#eff6ff',
+                border: '1px solid #7dd3fc',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '24px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap className="w-5 h-5 text-blue-500" />
+                  <span style={{ fontWeight: '600', color: '#0c4a6e' }}>Real-Time Activity</span>
+                </div>
+                <button
+                  onClick={() => setShowUpdates(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#0c4a6e',
+                    fontSize: '20px'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {liveUpdates.map((update, i) => (
+                  <motion.div
+                    key={update.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    style={{
+                      padding: '8px 0',
+                      borderBottom: i < liveUpdates.length - 1 ? '1px solid #bae6fd' : 'none',
+                      fontSize: '0.875rem',
+                      color: '#0369a1'
+                    }}
+                  >
+                    <span style={{ fontWeight: '500' }}>✨ {update.message}</span>
+                    <span style={{ color: '#64748b', marginLeft: '8px' }}>
+                      {update.timestamp.toLocaleTimeString()}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Stats Overview */}
-        <motion.div 
+        <motion.div
           className="dashboard-stats-grid"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -101,12 +211,12 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
         >
           {[
             { label: 'Total Students', value: totalStudents, icon: Users, trend: '+12%' },
-            { label: 'Active Courses', value: publishedCourses, icon: BookOpen, trend: `${instructorCourses.length} total` },
-            { label: 'Total Courses', value: instructorCourses.length, icon: TrendingUp, trend: 'All courses' },
+            { label: 'Active Courses', value: publishedCourses, icon: BookOpen, trend: `${courses.length} total` },
+            { label: 'Total Courses', value: courses.length, icon: TrendingUp, trend: 'All courses' },
             { label: 'Avg. Rating', value: avgRating || 'N/A', icon: Star, trend: publishedCourses > 0 ? 'Excellent' : 'No ratings' }
           ].map((stat, i) => (
-            <motion.div 
-              key={i} 
+            <motion.div
+              key={i}
               className="dashboard-stat-card"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -115,9 +225,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
             >
               <div className="dashboard-stat-header">
                 <stat.icon className="dashboard-stat-icon" />
-                <span className="dashboard-stat-trend">
-                  {stat.trend}
-                </span>
+                <span className="dashboard-stat-trend">{stat.trend}</span>
               </div>
               <div className="dashboard-stat-value">{stat.value}</div>
               <div className="dashboard-stat-label">{stat.label}</div>
@@ -131,7 +239,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0, duration: 0.5 }}
         >
-          <motion.h2 
+          <motion.h2
             className="dashboard-section-title"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -139,8 +247,9 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
           >
             Your Courses
           </motion.h2>
-          {instructorCourses.length === 0 ? (
-            <motion.div 
+
+          {courses.length === 0 ? (
+            <motion.div
               className="dashboard-empty-state"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -149,10 +258,7 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
               <BookOpen className="dashboard-empty-icon" />
               <h3 className="dashboard-empty-title">No courses created yet</h3>
               <p className="dashboard-empty-description">Create your first course and start teaching</p>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button onClick={() => setShowModal(true)}>
                   <Plus className="w-5 h-5" /> Create Your First Course
                 </Button>
@@ -160,68 +266,97 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
             </motion.div>
           ) : (
             <div className="dashboard-courses-list">
-              {instructorCourses.map((course, i) => (
-                <motion.div 
-                  key={course._id || i} 
-                  className="dashboard-course-card"
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
-                  whileHover={{ scale: 1.02, y: -3 }}
-                >
-                  <div className="dashboard-course-header">
-                    <div className="dashboard-course-content">
-                      <div className="dashboard-course-title-row">
-                        <h3 className="dashboard-course-title">{course.title}</h3>
-                        <span className={`dashboard-course-status ${
-                          course.status === 'Published' 
-                            ? 'dashboard-course-status-published' 
-                            : 'dashboard-course-status-draft'
-                        }`}>
-                          {course.status}
-                        </span>
-                      </div>
-                      <div className="dashboard-course-meta">
-                        <div className="dashboard-course-meta-item">
-                          <Users className="w-4 h-4" />
-                          <span>{course.students || 0} students</span>
+              <AnimatePresence>
+                {courses.map((course, i) => (
+                  <motion.div
+                    key={course._id || i}
+                    className="dashboard-course-card"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{ delay: 1.2 + i * 0.1, duration: 0.5 }}
+                    whileHover={{ scale: 1.02, y: -3 }}
+                    layout
+                  >
+                    <div className="dashboard-course-header">
+                      <div className="dashboard-course-content">
+                        <div className="dashboard-course-title-row">
+                          <h3 className="dashboard-course-title">{course.title}</h3>
+                          <span
+                            className={`dashboard-course-status ${
+                              course.status === 'Published'
+                                ? 'dashboard-course-status-published'
+                                : 'dashboard-course-status-draft'
+                            }`}
+                          >
+                            {course.status}
+                          </span>
                         </div>
-                        <div className="dashboard-course-meta-item">
-                          <BookOpen className="w-4 h-4" />
-                          <span>{course.duration || 'N/A'}</span>
-                        </div>
-                        {course.rating > 0 && (
+                        <div className="dashboard-course-meta">
                           <div className="dashboard-course-meta-item">
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                            <span>{course.rating} rating</span>
+                            <Users className="w-4 h-4" />
+                            <span>{course.students || 0} students</span>
                           </div>
-                        )}
+                          <div className="dashboard-course-meta-item">
+                            <BookOpen className="w-4 h-4" />
+                            <span>{course.duration || 'N/A'}</span>
+                          </div>
+                          {course.rating > 0 && (
+                            <div className="dashboard-course-meta-item">
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                              <span>{course.rating} rating</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="dashboard-course-actions">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            variant="ghost"
+                            onClick={() => navigate(`/instructor/course/${course._id}/manage`)}
+                          >
+                            <Edit className="w-4 h-4" /> Manage
+                          </Button>
+                        </motion.div>
+                        <motion.button
+                          onClick={() => onDeleteCourse(course)}
+                          className="dashboard-delete-button"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </motion.button>
                       </div>
                     </div>
-                    <div className="dashboard-course-actions">
+
+                    {/* Live student count indicator */}
+                    {realtimeUpdates.newEnrollment?.courseId === course._id && (
                       <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                          marginTop: '8px',
+                          padding: '4px 8px',
+                          background: '#dcfce7',
+                          color: '#166534',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
                       >
-                        <Button 
-                          variant="ghost" 
-                          onClick={() => navigate(`/instructor/course/${course._id}/manage`)}
-                        >
-                          <Edit className="w-4 h-4" /> Manage
-                        </Button>
+                        <span style={{ animation: 'pulse 1s infinite' }}>●</span>
+                        New enrollment
                       </motion.div>
-                      <motion.button 
-                        onClick={() => onDeleteCourse(course)}
-                        className="dashboard-delete-button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </motion.div>
@@ -229,21 +364,21 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
 
       {/* Create Course Modal */}
       {showModal && (
-        <motion.div 
+        <motion.div
           className="dashboard-modal-overlay"
           onClick={() => !loading && setShowModal(false)}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <motion.div 
+          <motion.div
             className="dashboard-modal-content"
             onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <motion.h2 
+            <motion.h2
               className="dashboard-modal-title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -258,11 +393,11 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                 transition={{ delay: 0.2, duration: 0.3 }}
               >
                 <label className="dashboard-modal-label">Course Title *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Enter course title"
                   value={newCourse.title}
-                  onChange={(e) => setNewCourse({...newCourse, title: e.target.value})}
+                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                   className="dashboard-modal-input"
                   disabled={loading}
                 />
@@ -273,9 +408,9 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                 transition={{ delay: 0.3, duration: 0.3 }}
               >
                 <label className="dashboard-modal-label">Category</label>
-                <select 
+                <select
                   value={newCourse.category}
-                  onChange={(e) => setNewCourse({...newCourse, category: e.target.value})}
+                  onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
                   className="dashboard-modal-input"
                   disabled={loading}
                 >
@@ -292,16 +427,16 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
                 transition={{ delay: 0.4, duration: 0.3 }}
               >
                 <label className="dashboard-modal-label">Description *</label>
-                <textarea 
+                <textarea
                   placeholder="Describe your course"
                   rows="4"
                   value={newCourse.description}
-                  onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
+                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                   className="dashboard-modal-textarea"
                   disabled={loading}
                 ></textarea>
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="dashboard-modal-grid"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -309,43 +444,33 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
               >
                 <div>
                   <label className="dashboard-modal-label">Duration</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g., 12h"
                     value={newCourse.duration}
-                    onChange={(e) => setNewCourse({...newCourse, duration: e.target.value})}
+                    onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
                     className="dashboard-modal-input"
                     disabled={loading}
                   />
                 </div>
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="dashboard-modal-actions"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.3 }}
               >
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button 
-                    className="dashboard-modal-button-flex" 
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    className="dashboard-modal-button-flex"
                     onClick={handleCreateCourse}
                     disabled={loading}
                   >
                     {loading ? 'Creating...' : 'Create Course'}
                   </Button>
                 </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setShowModal(false)}
-                    disabled={loading}
-                  >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="ghost" onClick={() => setShowModal(false)} disabled={loading}>
                     Cancel
                   </Button>
                 </motion.div>
@@ -354,6 +479,13 @@ const InstructorDashboard = ({ instructorCourses, onCreateCourse, onDeleteCourse
           </motion.div>
         </motion.div>
       )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </motion.div>
   );
 };

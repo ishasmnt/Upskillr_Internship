@@ -64,7 +64,7 @@ const MyProfile = ({ userRole, user }) => {
     coursesCreated: 0, // Will come from backend
     totalStudents: 0,
     averageRating: 0,
-    totalRevenue: '$0',
+    totalRevenue: '₹0',
   };
 
   const recentActivity = []; // Will come from backend

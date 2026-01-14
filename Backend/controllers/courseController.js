@@ -6,7 +6,7 @@ const Course = require('../models/Course');
 // @access  Public
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ status: 'Published' })
+    const courses = await Course.find({})
       .populate('instructor', 'name email')
       .populate('modules')
       .populate('assignments')

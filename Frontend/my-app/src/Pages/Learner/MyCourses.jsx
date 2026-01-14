@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,6 +8,11 @@ import '../../styles/MyCourses.css';
 
 const MyCourses = ({ enrolledCourses }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log('📚 MyCourses received enrolledCourses:', enrolledCourses);
+    console.log('Total courses:', enrolledCourses?.length || 0);
+  }, [enrolledCourses]);
 
   return (
     <motion.div 

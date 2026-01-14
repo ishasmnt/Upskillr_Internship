@@ -68,9 +68,24 @@ export const authAPI = {
 // ==================== COURSE API ====================
 export const courseAPI = {
   getAllCourses: async () => {
+  try {
     const response = await api.get('/courses');
-    return response.data;
-  },
+    console.log('✅ Courses API Response:', response.data);
+    
+    // Handle different response formats
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && response.data.courses) {
+      return response.data.courses;
+    } else if (response.data && response.data.data) {
+      return response.data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('❌ Error fetching courses:', error);
+    throw error;
+  }
+},
 
   getCourseById: async (id) => {
     const response = await api.get(`/courses/${id}`);
