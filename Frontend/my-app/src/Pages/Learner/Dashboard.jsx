@@ -292,7 +292,7 @@ const Dashboard = ({ enrolledCourses, onRefresh, realtimeUpdates }) => {
                       />
 
                       {/* Live progress indicator */}
-                      {realtimeUpdates.updatedProgress?.courseId === course._id && (
+                      {realtimeUpdates.updatedProgress?.courseId === course?._id && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}

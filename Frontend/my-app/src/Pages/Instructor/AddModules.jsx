@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Video, FileText, Trash2, Upload, Save, ArrowLeft } from 'lucide-react';
+import { Plus, Video, FileText, Trash2, Upload, ArrowLeft } from 'lucide-react';
 import Button from '../../components/Button';
 import { moduleAPI } from '../../services/api';
 import '../../styles/AddModules.css';
@@ -15,10 +15,11 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
   const [loading, setLoading] = useState(true);
   const [showModuleModal, setShowModuleModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [newModule, setNewModule] = useState({
     title: '',
     description: '',
-    videoUrl: '',
+    videoFile: null,
     duration: '',
     resources: []
   });
@@ -52,22 +53,59 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
     );
   }
 
+  const handleVideoSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      const validTypes = ['video/mp4', 'video/avi', 'video/mkv', 'video/mov', 'video/wmv', 'video/webm'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload a valid video file (MP4, AVI, MKV, MOV, WMV, WEBM)');
+        return;
+      }
+      
+      // Check file size (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        alert('Video file size must be less than 500MB');
+        return;
+      }
+
+      setNewModule({
+        ...newModule,
+        videoFile: file
+      });
+    }
+  };
+
   const addModule = async () => {
-    if (!newModule.title || !newModule.description) {
-      alert('Please fill in required fields');
+    if (!newModule.title || !newModule.description || !newModule.videoFile) {
+      alert('Please fill in required fields and upload a video');
       return;
     }
 
     setSaving(true);
+    setUploadProgress(0);
+
     try {
-      await moduleAPI.createModule(courseId, newModule);
+      const formData = new FormData();
+      formData.append('title', newModule.title);
+      formData.append('description', newModule.description);
+      formData.append('duration', newModule.duration);
+      formData.append('video', newModule.videoFile);
+      formData.append('resources', JSON.stringify(newModule.resources));
+
+      await moduleAPI.createModuleWithVideo(courseId, formData, (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setUploadProgress(percentCompleted);
+      });
+
       await fetchModules();
-      setNewModule({ title: '', description: '', videoUrl: '', duration: '', resources: [] });
+      setNewModule({ title: '', description: '', videoFile: null, duration: '', resources: [] });
       setShowModuleModal(false);
+      setUploadProgress(0);
       alert('Module added successfully!');
     } catch (error) {
       console.error('Error creating module:', error);
-      alert('Failed to create module');
+      alert(error.response?.data?.message || 'Failed to create module');
     } finally {
       setSaving(false);
     }
@@ -142,7 +180,7 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
             <div className="add-modules-empty-state">
               <Video className="add-modules-empty-icon" />
               <h3 className="add-modules-empty-title">No modules added yet</h3>
-              <p className="add-modules-empty-description">Start building your course by adding video lessons</p>
+              <p className="add-modules-empty-description">Start building your course by uploading video lessons</p>
               <Button onClick={() => setShowModuleModal(true)}>
                 <Plus className="w-5 h-5" /> Add Your First Module
               </Button>
@@ -164,10 +202,11 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
                       </div>
                       <p className="add-modules-item-description">{module.description}</p>
                       
-                      {module.videoUrl && (
+                      {module.videoFileName && (
                         <div className="add-modules-item-video">
                           <Video className="w-4 h-4" />
-                          <span>Video URL: {module.videoUrl}</span>
+                          <span>Video: {module.videoFileName}</span>
+                          {module.videoSize && <span className="text-gray-500 ml-2">({module.videoSize})</span>}
                         </div>
                       )}
 
@@ -205,7 +244,11 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
           <ul className="add-modules-tips-list">
             <li className="add-modules-tips-item">
               <span className="add-modules-tips-bullet">•</span>
-              <span>Keep modules focused on one specific topic or concept</span>
+              <span>Upload video files in MP4, AVI, MKV, MOV, WMV, or WEBM format</span>
+            </li>
+            <li className="add-modules-tips-item">
+              <span className="add-modules-tips-bullet">•</span>
+              <span>Keep video files under 500MB for optimal performance</span>
             </li>
             <li className="add-modules-tips-item">
               <span className="add-modules-tips-bullet">•</span>
@@ -214,10 +257,6 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
             <li className="add-modules-tips-item">
               <span className="add-modules-tips-bullet">•</span>
               <span>Provide downloadable resources to supplement video content</span>
-            </li>
-            <li className="add-modules-tips-item">
-              <span className="add-modules-tips-bullet">•</span>
-              <span>Use clear and descriptive titles that indicate what students will learn</span>
             </li>
           </ul>
         </div>
@@ -254,17 +293,47 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
               </div>
 
               <div>
-                <label className="add-modules-modal-label">Video URL</label>
-                <input 
-                  type="url" 
-                  placeholder="https://youtube.com/watch?v=..."
-                  value={newModule.videoUrl}
-                  onChange={(e) => setNewModule({...newModule, videoUrl: e.target.value})}
-                  className="add-modules-modal-input"
-                  disabled={saving}
-                />
-                <p className="add-modules-modal-help-text">YouTube, Vimeo, or direct video link</p>
+                <label className="add-modules-modal-label">Upload Video File *</label>
+                <div style={{ marginBottom: '8px' }}>
+                  <input 
+                    type="file" 
+                    accept="video/*"
+                    onChange={handleVideoSelect}
+                    style={{ 
+                      width: '100%', 
+                      padding: '8px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px'
+                    }}
+                    disabled={saving}
+                  />
+                </div>
+                {newModule.videoFile && (
+                  <p style={{ fontSize: '0.875rem', color: '#059669', marginTop: '4px' }}>
+                    ✓ {newModule.videoFile.name} ({(newModule.videoFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  </p>
+                )}
+                <p className="add-modules-modal-help-text">
+                  Supported: MP4, AVI, MKV, MOV, WMV, WEBM (Max 500MB)
+                </p>
               </div>
+
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Uploading...</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#2563eb' }}>{uploadProgress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${uploadProgress}%`, 
+                      height: '100%', 
+                      background: '#2563eb',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="add-modules-modal-label">Duration</label>
@@ -318,9 +387,9 @@ const AddModules = ({ instructorCourses, onRefresh }) => {
                 <Button 
                   className="add-modules-modal-button-flex" 
                   onClick={addModule}
-                  disabled={saving}
+                  disabled={saving || !newModule.videoFile}
                 >
-                  <Plus className="w-5 h-5" /> {saving ? 'Adding...' : 'Add Module'}
+                  <Upload className="w-5 h-5" /> {saving ? `Uploading... ${uploadProgress}%` : 'Upload Module'}
                 </Button>
                 <Button 
                   variant="ghost" 

@@ -1,18 +1,11 @@
-// ============================================
-// BACKEND: Install Socket.io
-// ============================================
-// npm install socket.io
-
-// ============================================
-// BACKEND: server/server.js - MODIFIED
-// ============================================
-
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const morgan = require("morgan");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -30,6 +23,17 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
+
+// Create uploads directories if they don't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+const videosDir = path.join(__dirname, 'uploads/videos');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+if (!fs.existsSync(videosDir)) {
+  fs.mkdirSync(videosDir);
+}
 
 // Socket.io configuration
 const io = socketIo(server, {
@@ -80,62 +84,50 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// ============================================
-// SOCKET.IO REAL-TIME EVENTS
-// ============================================
-
+// Socket.io events
 io.on('connection', (socket) => {
   console.log(`✨ User connected: ${socket.id}`);
 
-  // User joins a course room
   socket.on('join-course', (courseId) => {
     socket.join(`course-${courseId}`);
     console.log(`📚 User joined course: ${courseId}`);
   });
 
-  // User leaves a course room
   socket.on('leave-course', (courseId) => {
     socket.leave(`course-${courseId}`);
     console.log(`👋 User left course: ${courseId}`);
   });
 
-  // Broadcast when a new course is created
   socket.on('course-created', (course) => {
     io.emit('new-course', course);
     console.log(`🆕 New course created: ${course.title}`);
   });
 
-  // Broadcast when course is updated
   socket.on('course-updated', (course) => {
     io.to(`course-${course._id}`).emit('course-updated', course);
     console.log(`✏️ Course updated: ${course.title}`);
   });
 
-  // Broadcast when a module is added
   socket.on('module-added', (data) => {
     io.to(`course-${data.courseId}`).emit('module-added', data.module);
-    console.log(`📝 Module added to course`);
+    console.log(`📖 Module added to course`);
   });
 
-  // Broadcast when assignment is created
   socket.on('assignment-created', (data) => {
     io.to(`course-${data.courseId}`).emit('assignment-created', data.assignment);
     console.log(`📋 Assignment created`);
   });
 
-  // Broadcast when assignment is submitted
   socket.on('assignment-submitted', (data) => {
     io.to(`course-${data.courseId}`).emit('assignment-submitted', data);
     console.log(`✅ Assignment submitted`);
   });
 
-  // Broadcast when note is uploaded
   socket.on('note-uploaded', (data) => {
     io.to(`course-${data.courseId}`).emit('note-uploaded', data.note);
     console.log(`📄 Note uploaded`);
   });
 
-  // Broadcast when user enrolls
   socket.on('user-enrolled', (data) => {
     io.to(`course-${data.courseId}`).emit('student-enrolled', {
       courseId: data.courseId,
@@ -144,37 +136,25 @@ io.on('connection', (socket) => {
     console.log(`🎓 Student enrolled`);
   });
 
-  // Broadcast progress update
   socket.on('progress-updated', (data) => {
     io.to(`course-${data.courseId}`).emit('progress-updated', data);
     console.log(`📊 Progress updated`);
   });
 
-  // Broadcast feedback submitted
   socket.on('feedback-submitted', (data) => {
     io.to(`course-${data.courseId}`).emit('feedback-submitted', data);
     console.log(`💬 Feedback submitted`);
   });
 
-  // Disconnect event
   socket.on('disconnect', () => {
     console.log(`❌ User disconnected: ${socket.id}`);
   });
 });
 
-// ============================================
-// FRONTEND: Install Socket.io Client
-// ============================================
-// npm install socket.io-client
-
-// ============================================
-// FRONTEND: src/services/socket.js - NEW FILE
-// ============================================
-
-
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`📹 Video uploads directory: ${videosDir}`);
   console.log(`🔌 Socket.io enabled - Real-time updates active`);
 });

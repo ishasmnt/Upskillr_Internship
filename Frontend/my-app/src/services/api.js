@@ -68,24 +68,24 @@ export const authAPI = {
 // ==================== COURSE API ====================
 export const courseAPI = {
   getAllCourses: async () => {
-  try {
-    const response = await api.get('/courses');
-    console.log('✅ Courses API Response:', response.data);
-    
-    // Handle different response formats
-    if (Array.isArray(response.data)) {
-      return response.data;
-    } else if (response.data && response.data.courses) {
-      return response.data.courses;
-    } else if (response.data && response.data.data) {
-      return response.data.data;
+    try {
+      const response = await api.get('/courses');
+      console.log('✅ Courses API Response:', response.data);
+      
+      // Handle different response formats
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && response.data.courses) {
+        return response.data.courses;
+      } else if (response.data && response.data.data) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ Error fetching courses:', error);
+      throw error;
     }
-    return [];
-  } catch (error) {
-    console.error('❌ Error fetching courses:', error);
-    throw error;
-  }
-},
+  },
 
   getCourseById: async (id) => {
     const response = await api.get(`/courses/${id}`);
@@ -113,7 +113,7 @@ export const courseAPI = {
   },
 };
 
-// ==================== MODULE API ====================
+// ==================== MODULE API (Updated with Video Upload) ====================
 export const moduleAPI = {
   getModules: async (courseId) => {
     const response = await api.get(`/modules/${courseId}`);
@@ -125,6 +125,15 @@ export const moduleAPI = {
     return response.data;
   },
 
+  // NEW: Create module with video file upload
+  createModuleWithVideo: async (courseId, formData, onUploadProgress) => {
+    const response = await api.post(`/modules/${courseId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onUploadProgress
+    });
+    return response.data;
+  },
+
   updateModule: async (id, moduleData) => {
     const response = await api.put(`/modules/${id}`, moduleData);
     return response.data;
@@ -133,6 +142,11 @@ export const moduleAPI = {
   deleteModule: async (id) => {
     const response = await api.delete(`/modules/${id}`);
     return response.data;
+  },
+
+  // NEW: Get video stream URL
+  getVideoStreamUrl: (moduleId) => {
+    return `${API_URL}/modules/${moduleId}/stream`;
   },
 };
 

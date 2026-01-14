@@ -102,6 +102,15 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
     );
   }
 
+  // Get video URL for current module
+  const getVideoUrl = (module) => {
+    if (module?.videoPath) {
+      // Use streaming endpoint for uploaded videos
+      return moduleAPI.getVideoStreamUrl(module._id);
+    }
+    return null;
+  };
+
   return (
     <div className="course-player-page">
       <div className="course-player-container">
@@ -135,32 +144,58 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
               ) : (
                 <>
                   <div className="course-player-video-container">
-                    {currentModule?.videoUrl ? (
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        src={currentModule.videoUrl}
-                        title={currentModule.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        style={{ borderRadius: '12px' }}
-                      />
+                    {getVideoUrl(currentModule) ? (
+                      <video
+                        key={currentModule._id}
+                        controls
+                        controlsList="nodownload"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '12px',
+                          background: '#000'
+                        }}
+                      >
+                        <source src={getVideoUrl(currentModule)} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
                     ) : (
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center',
                         height: '100%',
-                        background: '#f3f4f6'
+                        background: '#f3f4f6',
+                        flexDirection: 'column',
+                        gap: '12px'
                       }}>
                         <Video className="course-player-video-icon" />
+                        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                          Video not available
+                        </p>
                       </div>
                     )}
                   </div>
                   <div className="course-player-content">
                     <h1 className="course-player-title">{currentModule?.title}</h1>
                     <p className="course-player-description">{currentModule?.description}</p>
+                    
+                    {currentModule?.videoFileName && (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        color: '#6b7280',
+                        fontSize: '0.875rem',
+                        marginTop: '8px'
+                      }}>
+                        <Video className="w-4 h-4" />
+                        <span>{currentModule.videoFileName}</span>
+                        {currentModule.videoSize && (
+                          <span className="text-gray-400">({currentModule.videoSize})</span>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="course-player-actions">
                       <Button onClick={markAsComplete}>
@@ -242,6 +277,11 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
                         <div className="course-player-lesson-info">
                           <div className="course-player-lesson-number">Module {i + 1}</div>
                           <div className="course-player-lesson-name">{module.title}</div>
+                          {module.duration && (
+                            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>
+                              {module.duration}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
