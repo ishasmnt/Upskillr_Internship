@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Upload,
@@ -11,61 +11,42 @@ import {
   Send
 } from 'lucide-react';
 import Button from '../../components/Button';
+import { assignmentAPI } from '../../services/api';
 import '../../styles/SubmitAssignment.css';
 
 const SubmitAssignment = ({ enrolledCourses }) => {
   const navigate = useNavigate();
   const { courseId } = useParams();
 
-  const course = enrolledCourses.find(c => c.id === parseInt(courseId));
+  const enrollment = enrolledCourses.find(e => e.course?._id === courseId);
+  const course = enrollment?.course;
 
-  const [assignments] = useState([
-    {
-      id: 1,
-      title: 'Build a React Todo App',
-      description:
-        'Create a fully functional todo application using React hooks and local storage',
-      dueDate: '2024-02-15',
-      totalMarks: 100,
-      type: 'Project',
-      status: 'pending',
-      instructions:
-        'Your todo app should include: Add tasks, Mark as complete, Delete tasks, Persist data in localStorage'
-    },
-    {
-      id: 2,
-      title: 'Component Lifecycle Quiz',
-      description:
-        'Answer questions about React component lifecycle methods',
-      dueDate: '2024-02-10',
-      totalMarks: 50,
-      type: 'Quiz',
-      status: 'submitted',
-      submittedDate: '2024-02-08',
-      grade: 45
-    },
-    {
-      id: 3,
-      title: 'State Management Essay',
-      description:
-        'Write a detailed essay comparing different state management solutions in React',
-      dueDate: '2024-02-20',
-      totalMarks: 75,
-      type: 'Written',
-      status: 'graded',
-      submittedDate: '2024-02-18',
-      grade: 68,
-      feedback:
-        'Good analysis of Redux and Context API. Could use more detail on MobX.'
-    }
-  ]);
-
+  // FIX: Fetch assignments from API instead of using static data
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
-
-  // ✅ FIXED SYNTAX ERROR (nothing removed)
   const [submissionText, setSubmissionText] = useState('');
-
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (courseId) {
+      fetchAssignments();
+    }
+  }, [courseId]);
+
+  // FIX: Add fetch function
+  const fetchAssignments = async () => {
+    try {
+      setLoading(true);
+      const data = await assignmentAPI.getAssignments(courseId);
+      setAssignments(data);
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!course) {
     return (
@@ -86,17 +67,43 @@ const SubmitAssignment = ({ enrolledCourses }) => {
     const file = e.target.files[0];
     if (file) {
       setUploadedFile({
+        file: file,
         name: file.name,
         size: (file.size / 1024).toFixed(2) + ' KB'
       });
     }
   };
 
-  const handleSubmit = () => {
-    alert('Assignment submitted successfully!');
-    setSelectedAssignment(null);
-    setSubmissionText('');
-    setUploadedFile(null);
+  const handleSubmit = async () => {
+    if (!submissionText && !uploadedFile) {
+      alert('Please provide submission text or upload a file');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('text', submissionText);
+      if (uploadedFile) {
+        formData.append('file', uploadedFile.file);
+      }
+
+      await assignmentAPI.submitAssignment(selectedAssignment._id, {
+        text: submissionText,
+        file: uploadedFile?.file
+      });
+
+      alert('Assignment submitted successfully!');
+      setSelectedAssignment(null);
+      setSubmissionText('');
+      setUploadedFile(null);
+      await fetchAssignments();
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Failed to submit assignment');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -169,7 +176,7 @@ const SubmitAssignment = ({ enrolledCourses }) => {
                   <div className="submit-assignment-detail-meta-label">Due Date</div>
                   <div className="submit-assignment-detail-meta-value">
                     <Calendar className="w-4 h-4" />
-                    {selectedAssignment.dueDate}
+                    {new Date(selectedAssignment.dueDate).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="submit-assignment-detail-meta-item">
@@ -210,6 +217,8 @@ const SubmitAssignment = ({ enrolledCourses }) => {
                       value={submissionText}
                       onChange={(e) => setSubmissionText(e.target.value)}
                       className="submit-assignment-form-textarea"
+                      placeholder="Enter your submission text here..."
+                      disabled={submitting}
                     />
                   </div>
 
@@ -223,6 +232,7 @@ const SubmitAssignment = ({ enrolledCourses }) => {
                         id="assignmentFile"
                         onChange={handleFileUpload}
                         className="submit-assignment-upload-input"
+                        disabled={submitting}
                       />
                       <label htmlFor="assignmentFile" className="submit-assignment-upload-label">
                         <Upload className="submit-assignment-upload-icon" />
@@ -246,8 +256,13 @@ const SubmitAssignment = ({ enrolledCourses }) => {
                   </div>
                 </div>
 
-                <Button className="submit-assignment-submit-button" size="lg" onClick={handleSubmit}>
-                  <Send className="w-5 h-5" /> Submit Assignment
+                <Button 
+                  className="submit-assignment-submit-button" 
+                  size="lg" 
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                >
+                  <Send className="w-5 h-5" /> {submitting ? 'Submitting...' : 'Submit Assignment'}
                 </Button>
               </>
             ) : null}
@@ -260,6 +275,16 @@ const SubmitAssignment = ({ enrolledCourses }) => {
   /* =======================
       ASSIGNMENT LIST VIEW
      ======================= */
+  if (loading) {
+    return (
+      <div className="submit-assignment-page">
+        <div className="submit-assignment-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading assignments...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="submit-assignment-page">
       <div className="submit-assignment-container">
@@ -277,21 +302,28 @@ const SubmitAssignment = ({ enrolledCourses }) => {
           Course: {course.title}
         </p>
 
-        <div className="submit-assignment-list">
-          {assignments.map((assignment) => (
-            <div
-              key={assignment.id}
-              className="submit-assignment-item"
-            >
-              <div className="submit-assignment-item-header">
-                <h3 className="submit-assignment-item-title">{assignment.title}</h3>
-                <Button onClick={() => setSelectedAssignment(assignment)}>
-                  {assignment.status === 'pending' ? 'Submit' : 'View'}
-                </Button>
+        {assignments.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <p>No assignments available for this course yet</p>
+          </div>
+        ) : (
+          <div className="submit-assignment-list">
+            {assignments.map((assignment) => (
+              <div
+                key={assignment._id}
+                className="submit-assignment-item"
+              >
+                <div className="submit-assignment-item-header">
+                  <h3 className="submit-assignment-item-title">{assignment.title}</h3>
+                  <Button onClick={() => setSelectedAssignment(assignment)}>
+                    {assignment.status === 'pending' ? 'Submit' : 'View'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

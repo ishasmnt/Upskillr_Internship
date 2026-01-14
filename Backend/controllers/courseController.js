@@ -43,6 +43,8 @@ const getCourseById = async (req, res) => {
 // @access  Private/Instructor
 const createCourse = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
     const { title, description, category, duration, price } = req.body;
 
     const course = await Course.create({
@@ -116,12 +118,15 @@ const deleteCourse = async (req, res) => {
 // @access  Private/Instructor
 const getInstructorCourses = async (req, res) => {
   try {
+    console.log('Getting courses for instructor:', req.user._id);
     const courses = await Course.find({ instructor: req.user._id })
       .populate('modules')
       .populate('assignments')
       .populate('notes');
+    console.log('Found courses:', courses);
     res.json(courses);
   } catch (error) {
+    console.error('Error in getInstructorCourses:', error);
     res.status(500).json({ message: error.message });
   }
 };

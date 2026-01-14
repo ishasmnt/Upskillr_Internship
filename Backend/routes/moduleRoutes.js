@@ -9,7 +9,10 @@ const {
   deleteModule,
 } = require("../controllers/moduleController");
 
-router.get("/:courseId", protect, getModules);
+// Public route - learners and anyone can view modules
+router.get("/:courseId", getModules);
+
+// Protected routes - only instructors can create/update/delete
 router.post("/:courseId", protect, roleCheck(["instructor"]), createModule);
 router.put("/:id", protect, roleCheck(["instructor"]), updateModule);
 router.delete("/:id", protect, roleCheck(["instructor"]), deleteModule);

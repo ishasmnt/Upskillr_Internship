@@ -22,16 +22,17 @@ const Login = ({ onLogin }) => {
       // Call the API
       const data = await authAPI.login({ email, password });
       
-      // Store user data
+      // Store user data and token
       localStorage.setItem('user', JSON.stringify(data));
+      localStorage.setItem('token', data.token);
       
-      // Update parent component state
-      onLogin(data.role);
+      // FIX: Pass both role and full user data to parent component
+      onLogin(data.role, data);
       
       // Navigate based on role
       if (data.role === 'learner') {
         navigate('/learner/dashboard');
-      } else {
+      } else if (data.role === 'instructor') {
         navigate('/instructor/dashboard');
       }
     } catch (err) {

@@ -11,8 +11,13 @@ const {
   getInstructorCourses,
 } = require("../controllers/courseController");
 
+// Public routes
 router.get("/", getCourses);
+
+// Specific routes MUST come before generic :id routes
 router.get("/instructor/my-courses", protect, roleCheck(["instructor"]), getInstructorCourses);
+
+// Generic routes
 router.get("/:id", getCourseById);
 router.post("/", protect, roleCheck(["instructor"]), createCourse);
 router.put("/:id", protect, roleCheck(["instructor"]), updateCourse);
