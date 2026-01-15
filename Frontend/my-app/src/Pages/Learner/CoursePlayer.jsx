@@ -19,6 +19,30 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState(enrollment?.completedLessons || []);
   const [progress, setProgress] = useState(enrollment?.progress || 0);
+  const [videoUrl, setVideoUrl] = useState(null);
+
+  // Fetch video URL
+useEffect(() => {
+  const fetchVideoUrl = async () => {
+    if (currentModule?.videoPath) {
+      // If it's a Cloudinary URL, use it directly
+      if (currentModule.videoPath.includes('cloudinary.com')) {
+        setVideoUrl(currentModule.videoPath);
+      } else {
+        // Otherwise fetch from streaming endpoint
+        try {
+          const response = await fetch(moduleAPI.getVideoStreamUrl(currentModule._id));
+          const data = await response.json();
+          setVideoUrl(data.videoUrl);
+        } catch (error) {
+          console.error('Error fetching video:', error);
+        }
+      }
+    }
+  };
+  
+  fetchVideoUrl();
+}, [currentModule]);
 
   useEffect(() => {
     if (course) {
@@ -145,20 +169,19 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
                 <>
                   <div className="course-player-video-container">
                     {getVideoUrl(currentModule) ? (
-                      <video
-                        key={currentModule._id}
-                        controls
-                        controlsList="nodownload"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          borderRadius: '12px',
-                          background: '#000'
-                        }}
-                      >
-                        <source src={getVideoUrl(currentModule)} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
+                     <video
+                      key={currentModule._id}
+                      controls
+                      src={videoUrl}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '12px',
+                        background: '#000'
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
                     ) : (
                       <div style={{ 
                         display: 'flex', 

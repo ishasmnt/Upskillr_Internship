@@ -21,6 +21,8 @@ const feedbackRoutes = require("./routes/feedbackRoutes");
 dotenv.config();
 connectDB();
 
+require('./config/cloudinary');
+
 const app = express();
 const server = http.createServer(app);
 

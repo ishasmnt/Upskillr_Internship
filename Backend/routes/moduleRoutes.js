@@ -1,4 +1,5 @@
 const express = require("express");
+const { videoStorage } = require("../config/cloudinary");
 const multer = require("multer");
 const path = require("path");
 const router = express.Router();
@@ -38,9 +39,8 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
-  fileFilter: fileFilter
+  storage: videoStorage,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB
 });
 
 // Public routes
