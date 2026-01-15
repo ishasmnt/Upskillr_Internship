@@ -93,7 +93,7 @@ const Dashboard = ({ enrolledCourses, onRefresh, realtimeUpdates }) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            Welcome back! 👋
+            Welcome back! 
           </motion.h1>
           <motion.p
             className="learner-dashboard-welcome-subtitle"
