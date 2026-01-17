@@ -73,6 +73,13 @@ app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
+// Root route (MOVE HERE 👇)
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Upskillr Backend is running 🚀"
+  });
+});
+
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "Server is running" });
