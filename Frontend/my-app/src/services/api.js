@@ -186,6 +186,7 @@ export const assignmentAPI = {
 };
 
 // ==================== NOTE API ====================
+// Find the noteAPI section and add previewNote function
 export const noteAPI = {
   getNotes: async (courseId) => {
     const response = await api.get(`/notes/${courseId}`);
@@ -222,8 +223,13 @@ export const noteAPI = {
     });
     return response.data;
   },
-};
 
+  // NEW: Preview note
+  previewNote: async (id) => {
+    const response = await api.get(`/notes/${id}/preview`);
+    return response.data;
+  },
+};
 // ==================== ENROLLMENT API ====================
 export const enrollmentAPI = {
   getMyEnrollments: async () => {

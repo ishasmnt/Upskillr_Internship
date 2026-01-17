@@ -93,6 +93,22 @@ const UploadNotes = ({ instructorCourses, onRefresh }) => {
     }
   };
 
+  const handleDownload = async (note) => {
+    try {
+      // Create a temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = `/api/notes/${note._id}/download`;
+      link.download = note.fileName;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download note. Please try again.');
+    }
+  };
+
   const deleteNote = async (noteId) => {
     if (!window.confirm('Are you sure you want to delete this note?')) return;
 
@@ -217,6 +233,13 @@ const UploadNotes = ({ instructorCourses, onRefresh }) => {
                         <Download className="w-3 h-3" />
                         <span>{note.downloads || 0} downloads</span>
                       </div>
+                      <button
+                        onClick={() => handleDownload(note)}
+                        className="upload-notes-download-button"
+                        title="Download note"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

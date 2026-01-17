@@ -21,28 +21,28 @@ const CoursePlayer = ({ enrolledCourses, onRefresh }) => {
   const [progress, setProgress] = useState(enrollment?.progress || 0);
   const [videoUrl, setVideoUrl] = useState(null);
 
-  // Fetch video URL
-useEffect(() => {
-  const fetchVideoUrl = async () => {
-    if (currentModule?.videoPath) {
-      // If it's a Cloudinary URL, use it directly
-      if (currentModule.videoPath.includes('cloudinary.com')) {
-        setVideoUrl(currentModule.videoPath);
-      } else {
-        // Otherwise fetch from streaming endpoint
-        try {
-          const response = await fetch(moduleAPI.getVideoStreamUrl(currentModule._id));
-          const data = await response.json();
-          setVideoUrl(data.videoUrl);
-        } catch (error) {
-          console.error('Error fetching video:', error);
+  // Fetch video URL from Cloudinary
+  useEffect(() => {
+    const fetchVideoUrl = async () => {
+      if (currentModule?.videoPath) {
+        // If it's a Cloudinary URL, use it directly
+        if (currentModule.videoPath.includes('cloudinary.com')) {
+          setVideoUrl(currentModule.videoPath);
+        } else {
+          // Otherwise fetch from streaming endpoint
+          try {
+            const response = await fetch(moduleAPI.getVideoStreamUrl(currentModule._id));
+            const data = await response.json();
+            setVideoUrl(data.videoUrl);
+          } catch (error) {
+            console.error('Error fetching video:', error);
+          }
         }
       }
-    }
-  };
-  
-  fetchVideoUrl();
-}, [currentModule]);
+    };
+    
+    fetchVideoUrl();
+  }, [currentModuleIndex, modules]);
 
   useEffect(() => {
     if (course) {
@@ -126,15 +126,6 @@ useEffect(() => {
     );
   }
 
-  // Get video URL for current module
-  const getVideoUrl = (module) => {
-    if (module?.videoPath) {
-      // Use streaming endpoint for uploaded videos
-      return moduleAPI.getVideoStreamUrl(module._id);
-    }
-    return null;
-  };
-
   return (
     <div className="course-player-page">
       <div className="course-player-container">
@@ -150,7 +141,7 @@ useEffect(() => {
           <div className="course-player-main">
             <div className="course-player-main-card">
               
-              {/* If course is 100% complete, show Feedback Form instead of Video */}
+              {/* If course is 100% complete, show Feedback Form */}
               {isCourseComplete ? (
                 <div className="course-completion-view" style={{ padding: '40px', textAlign: 'center' }}>
                    <FeedbackForm courseName={course.title} />
@@ -168,20 +159,20 @@ useEffect(() => {
               ) : (
                 <>
                   <div className="course-player-video-container">
-                    {getVideoUrl(currentModule) ? (
-                     <video
-                      key={currentModule._id}
-                      controls
-                      src={videoUrl}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '12px',
-                        background: '#000'
-                      }}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
+                    {videoUrl ? (
+                      <video
+                        key={currentModule._id}
+                        controls
+                        src={videoUrl}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '12px',
+                          background: '#000'
+                        }}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
                     ) : (
                       <div style={{ 
                         display: 'flex', 
@@ -194,7 +185,7 @@ useEffect(() => {
                       }}>
                         <Video className="course-player-video-icon" />
                         <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                          Video not available
+                          Loading video...
                         </p>
                       </div>
                     )}

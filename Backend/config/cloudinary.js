@@ -25,7 +25,7 @@ const documentStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'upskillr/documents',
-    resource_type: 'raw',
+    resource_type: 'auto',
     allowed_formats: ['pdf', 'doc', 'docx', 'ppt', 'pptx']
   }
 });

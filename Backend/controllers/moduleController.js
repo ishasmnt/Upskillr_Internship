@@ -1,8 +1,7 @@
 const Module = require('../models/Module');
 const Course = require('../models/Course');
-const fs = require('fs');
-const path = require('path');
 
+// Get all modules for a course
 exports.getModules = async (req, res) => {
   try {
     const modules = await Module.find({ course: req.params.courseId });
@@ -12,6 +11,7 @@ exports.getModules = async (req, res) => {
   }
 };
 
+// Create new module with video upload to Cloudinary
 exports.createModule = async (req, res) => {
   const { title, description, duration, resources } = req.body;
   try {
@@ -53,18 +53,16 @@ exports.createModule = async (req, res) => {
   }
 };
 
+// Update module
 exports.updateModule = async (req, res) => {
   try {
     const module = await Module.findById(req.params.id);
     if (!module) return res.status(404).json({ message: 'Module not found' });
 
-    // If new video file is uploaded, delete old one
+    // If new video file is uploaded
     if (req.file) {
-      if (module.videoPath && fs.existsSync(module.videoPath)) {
-        fs.unlinkSync(module.videoPath);
-      }
       module.videoFileName = req.file.originalname;
-      module.videoPath = req.file.path;
+      module.videoPath = req.file.path; // New Cloudinary URL
       module.videoSize = `${(req.file.size / (1024 * 1024)).toFixed(2)} MB`;
     }
 
@@ -88,15 +86,14 @@ exports.updateModule = async (req, res) => {
   }
 };
 
+// Delete module
 exports.deleteModule = async (req, res) => {
   try {
     const module = await Module.findById(req.params.id);
     if (!module) return res.status(404).json({ message: 'Module not found' });
 
-    // Delete video file from server
-    if (module.videoPath && fs.existsSync(module.videoPath)) {
-      fs.unlinkSync(module.videoPath);
-    }
+    // Note: Cloudinary files are not auto-deleted
+    // You can add cloudinary.uploader.destroy() here if needed
 
     await Module.findByIdAndDelete(req.params.id);
     res.json({ message: 'Module deleted' });
@@ -105,7 +102,7 @@ exports.deleteModule = async (req, res) => {
   }
 };
 
-// NEW: Stream video endpoint
+// Stream video - returns Cloudinary URL
 exports.streamVideo = async (req, res) => {
   try {
     const module = await Module.findById(req.params.moduleId);
@@ -114,7 +111,7 @@ exports.streamVideo = async (req, res) => {
       return res.status(404).json({ message: 'Video not found' });
     }
 
-    // Cloudinary URLs can be used directly
+    // Return Cloudinary URL (can be used directly in video player)
     res.json({ videoUrl: module.videoPath });
   } catch (error) {
     res.status(500).json({ message: error.message });

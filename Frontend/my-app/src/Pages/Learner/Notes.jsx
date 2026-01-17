@@ -57,25 +57,57 @@ const Notes = ({ enrolledCourses }) => {
     return matchesSearch && matchesCategory;
   });
 
+  // FIXED: Direct download from Cloudinary
   const handleDownload = async (note) => {
     try {
-      const blob = await noteAPI.downloadNote(note._id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = note.fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Direct download from Cloudinary URL
+      const link = document.createElement('a');
+      link.href = note.filePath; // Direct Cloudinary URL
+      link.download = note.fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Update download count in background (optional)
+      try {
+        await fetch(`http://localhost:5000/api/notes/${note._id}/increment-download`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (e) {
+        console.log('Download count update failed, but file downloaded successfully');
+      }
     } catch (error) {
       console.error('Download error:', error);
-      alert('Download feature coming soon!');
+      alert('Failed to download file. Opening in new tab instead...');
+      window.open(note.filePath, '_blank');
     }
   };
 
-  const handlePreview = (note) => {
-    alert('Preview feature coming soon!');
+  // FIXED: Direct preview from Cloudinary
+  const handlePreview = async (note) => {
+    try {
+      // Direct preview from Cloudinary URL
+      window.open(note.filePath, '_blank');
+
+      // Update download count in background (optional)
+      try {
+        await fetch(`http://localhost:5000/api/notes/${note._id}/increment-download`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (e) {
+        console.log('Preview count update failed, but file opened successfully');
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      alert('Failed to preview file.');
+    }
   };
 
   if (loading) {
