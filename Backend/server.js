@@ -42,7 +42,7 @@ const io = socketIo(server, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "https://upskillr-internship-fc3s.vercel.app"
+      "https://upskillr-internship-dn8v.vercel.app"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
@@ -50,24 +50,40 @@ const io = socketIo(server, {
 });
 
 // ===================== CORS CONFIG =====================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://upskillr-internship-fc3s.vercel.app",
+  "https://upskillr-internship-dn8v.vercel.app" // ✅ deployed frontend
+];
+
 const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://upskillr-internship-fc3s.vercel.app"
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `CORS policy does not allow access from ${origin}`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200
 };
 
+// Apply globally
+app.use(cors(corsOptions));
+app.options("*", corsOptions); // handle preflight
+
+
 // ===================== MIDDLEWARE =====================
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // 🔥 VERY IMPORTANT
+
+// 🔥 VERY IMPORTANT
 app.use(morgan("dev"));
 
 // Serve uploaded files
