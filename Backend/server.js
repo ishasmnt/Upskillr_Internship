@@ -21,14 +21,14 @@ const feedbackRoutes = require("./routes/feedbackRoutes");
 dotenv.config();
 connectDB();
 
-require('./config/cloudinary');
+require("./config/cloudinary");
 
 const app = express();
 const server = http.createServer(app);
 
 // Create uploads directories if they don't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-const videosDir = path.join(__dirname, 'uploads/videos');
+const uploadsDir = path.join(__dirname, "uploads");
+const videosDir = path.join(__dirname, "uploads/videos");
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -37,19 +37,19 @@ if (!fs.existsSync(videosDir)) {
   fs.mkdirSync(videosDir);
 }
 
-// Socket.io configuration
+// ===================== SOCKET.IO CONFIG =====================
 const io = socketIo(server, {
   cors: {
     origin: [
       "http://localhost:5173",
       "https://upskillr-internship-fc3s.vercel.app"
     ],
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
   }
 });
 
-
+// ===================== CORS CONFIG =====================
 const corsOptions = {
   origin: [
     "http://localhost:5173",
@@ -58,20 +58,22 @@ const corsOptions = {
     "https://upskillr-internship-fc3s.vercel.app"
   ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   optionsSuccessStatus: 200
 };
 
-
-// Middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// ===================== MIDDLEWARE =====================
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // 🔥 VERY IMPORTANT
 app.use(morgan("dev"));
 
 // Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads"));
 
-// Routes usage
+// ===================== ROUTES =====================
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/modules", moduleRoutes);
@@ -79,14 +81,15 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/feedback", feedbackRoutes);
-// Root route (MOVE HERE 👇)
+
+// Root route
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Upskillr Backend is running 🚀"
   });
 });
 
-// Health check endpoint
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "Server is running" });
 });
@@ -99,77 +102,76 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Socket.io events
-io.on('connection', (socket) => {
+// ===================== SOCKET EVENTS =====================
+io.on("connection", (socket) => {
   console.log(`✨ User connected: ${socket.id}`);
 
-  socket.on('join-course', (courseId) => {
+  socket.on("join-course", (courseId) => {
     socket.join(`course-${courseId}`);
     console.log(`📚 User joined course: ${courseId}`);
   });
 
-  socket.on('leave-course', (courseId) => {
+  socket.on("leave-course", (courseId) => {
     socket.leave(`course-${courseId}`);
     console.log(`👋 User left course: ${courseId}`);
   });
 
-  socket.on('course-created', (course) => {
-    io.emit('new-course', course);
+  socket.on("course-created", (course) => {
+    io.emit("new-course", course);
     console.log(`🆕 New course created: ${course.title}`);
   });
 
-  socket.on('course-updated', (course) => {
-    io.to(`course-${course._id}`).emit('course-updated', course);
+  socket.on("course-updated", (course) => {
+    io.to(`course-${course._id}`).emit("course-updated", course);
     console.log(`✏️ Course updated: ${course.title}`);
   });
 
-  socket.on('module-added', (data) => {
-    io.to(`course-${data.courseId}`).emit('module-added', data.module);
-    console.log(`📖 Module added to course`);
+  socket.on("module-added", (data) => {
+    io.to(`course-${data.courseId}`).emit("module-added", data.module);
+    console.log("📖 Module added to course");
   });
 
-  socket.on('assignment-created', (data) => {
-    io.to(`course-${data.courseId}`).emit('assignment-created', data.assignment);
-    console.log(`📋 Assignment created`);
+  socket.on("assignment-created", (data) => {
+    io.to(`course-${data.courseId}`).emit("assignment-created", data.assignment);
+    console.log("📋 Assignment created");
   });
 
-  socket.on('assignment-submitted', (data) => {
-    io.to(`course-${data.courseId}`).emit('assignment-submitted', data);
-    console.log(`✅ Assignment submitted`);
+  socket.on("assignment-submitted", (data) => {
+    io.to(`course-${data.courseId}`).emit("assignment-submitted", data);
+    console.log("✅ Assignment submitted");
   });
 
-  socket.on('note-uploaded', (data) => {
-    io.to(`course-${data.courseId}`).emit('note-uploaded', data.note);
-    console.log(`📄 Note uploaded`);
+  socket.on("note-uploaded", (data) => {
+    io.to(`course-${data.courseId}`).emit("note-uploaded", data.note);
+    console.log("📄 Note uploaded");
   });
 
-  socket.on('user-enrolled', (data) => {
-    io.to(`course-${data.courseId}`).emit('student-enrolled', {
+  socket.on("user-enrolled", (data) => {
+    io.to(`course-${data.courseId}`).emit("student-enrolled", {
       courseId: data.courseId,
       timestamp: new Date()
     });
-    console.log(`🎓 Student enrolled`);
+    console.log("🎓 Student enrolled");
   });
 
-  socket.on('progress-updated', (data) => {
-    io.to(`course-${data.courseId}`).emit('progress-updated', data);
-    console.log(`📊 Progress updated`);
+  socket.on("progress-updated", (data) => {
+    io.to(`course-${data.courseId}`).emit("progress-updated", data);
+    console.log("📊 Progress updated");
   });
 
-  socket.on('feedback-submitted', (data) => {
-    io.to(`course-${data.courseId}`).emit('feedback-submitted', data);
-    console.log(`💬 Feedback submitted`);
+  socket.on("feedback-submitted", (data) => {
+    io.to(`course-${data.courseId}`).emit("feedback-submitted", data);
+    console.log("💬 Feedback submitted");
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     console.log(`❌ User disconnected: ${socket.id}`);
   });
 });
 
+// ===================== SERVER START =====================
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  // console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`📹 Video uploads directory: ${videosDir}`);
-  // console.log(`🔌 Socket.io enabled - Real-time updates active`);
 });
