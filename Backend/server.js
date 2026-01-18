@@ -20,53 +20,44 @@ const feedbackRoutes = require("./routes/feedbackRoutes");
 
 dotenv.config();
 connectDB();
-
 require("./config/cloudinary");
 
 const app = express();
 const server = http.createServer(app);
 
-// Create uploads directories if they don't exist
+// ===================== UPLOAD DIRECTORIES =====================
 const uploadsDir = path.join(__dirname, "uploads");
 const videosDir = path.join(__dirname, "uploads/videos");
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-if (!fs.existsSync(videosDir)) {
-  fs.mkdirSync(videosDir);
-}
+// ✅ SAFE FOR RENDER
+fs.mkdirSync(uploadsDir, { recursive: true });
+fs.mkdirSync(videosDir, { recursive: true });
+
+// ===================== ALLOWED ORIGINS =====================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://upskillr-internship-fc3s.vercel.app",
+  "https://upskillr-internship-dn8v.vercel.app"
+];
 
 // ===================== SOCKET.IO CONFIG =====================
 const io = socketIo(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://upskillr-internship-dn8v.vercel.app"
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
   }
 });
 
 // ===================== CORS CONFIG =====================
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://upskillr-internship-fc3s.vercel.app",
-  "https://upskillr-internship-dn8v.vercel.app" // ✅ deployed frontend
-];
-
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, or server-to-server)
+    // allow requests with no origin (mobile apps, curl, server-side)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `CORS policy does not allow access from ${origin}`;
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked: ${origin}`), false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -74,16 +65,15 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply globally
+// ✅ APPLY CORS CORRECTLY
 app.use(cors(corsOptions));
-app.options("*", corsOptions); // handle preflight
-
+app.options("*", cors(corsOptions));
 
 // ===================== MIDDLEWARE =====================
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// 🔥 VERY IMPORTANT
+// 🔥 Logging
 app.use(morgan("dev"));
 
 // Serve uploaded files
