@@ -9,25 +9,25 @@ import socketService from './services/socket';
 import './App.css';
 
 // Pages
-import Home from './pages/Home';
-import Login from './pages/Auth/Login';
-import Register from './pages/Auth/Register';
+import Home from './Pages/Home';
+import Login from './Pages/Auth/Login';
+import Register from './Pages/Auth/Register';
 import NotFoundPage from './Pages/404Page';
 
 // Learner Pages
-import LearnerDashboard from './pages/Learner/Dashboard';
+import LearnerDashboard from './Pages/Learner/Dashboard';
 import CourseList from './Pages/Learner/CourseList';
-import MyCourses from './pages/Learner/MyCourses';
-import CoursePlayer from './pages/Learner/CoursePlayer';
-import SubmitAssignment from './pages/Learner/SubmitAssignment';
-import Notes from './pages/Learner/Notes';
+import MyCourses from './Pages/Learner/MyCourses';
+import CoursePlayer from './Pages/Learner/CoursePlayer';
+import SubmitAssignment from './Pages/Learner/SubmitAssignment';
+import Notes from './Pages/Learner/Notes';
 
 // Instructor Pages
 import InstructorDashboard from './Pages/Instructor/Dashboard';
-import ManageCourse from './pages/Instructor/ManageCourse';
-import AddModules from './pages/Instructor/AddModules';
+import ManageCourse from './Pages/Instructor/ManageCourse';
+import AddModules from './Pages/Instructor/AddModules';
 import AddAssignments from './Pages/Instructor/AddAssignments';
-import UploadNotes from './pages/Instructor/UploadNotes';
+import UploadNotes from './Pages/Instructor/UploadNotes';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
