@@ -1,3 +1,4 @@
+// ===================== IMPORTS =====================
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -9,7 +10,7 @@ const fs = require("fs");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
 
-// Routes
+// ===================== ROUTES =====================
 const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
@@ -18,10 +19,12 @@ const enrollmentRoutes = require("./routes/enrollmentRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 
+// ===================== ENV CONFIG =====================
 dotenv.config();
-connectDB();
+connectDB(); // connect to MongoDB
 require("./config/cloudinary");
 
+// ===================== APP & SERVER =====================
 const app = express();
 const server = http.createServer(app);
 
@@ -29,7 +32,6 @@ const server = http.createServer(app);
 const uploadsDir = path.join(__dirname, "uploads");
 const videosDir = path.join(__dirname, "uploads/videos");
 
-// ✅ SAFE FOR RENDER
 fs.mkdirSync(uploadsDir, { recursive: true });
 fs.mkdirSync(videosDir, { recursive: true });
 
@@ -40,7 +42,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "https://upskillr-internship-fc3s.vercel.app",
   "https://upskillr-internship-dn8v.vercel.app",
-  "https://upskillr-internship-rt2s.vercel.app"
+  "https://upskillr-internship-rt2s.vercel.app",
+  "https://upskillr-internship-u19v.vercel.app" // add your live frontend
 ];
 
 // ===================== SOCKET.IO CONFIG =====================
@@ -55,8 +58,7 @@ const io = socketIo(server, {
 // ===================== CORS CONFIG =====================
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (mobile apps, curl, server-side)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // allow mobile apps / curl
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked: ${origin}`), false);
   },
@@ -66,15 +68,11 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// ✅ APPLY CORS CORRECTLY
+// ===================== MIDDLEWARE =====================
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-
-// ===================== MIDDLEWARE =====================
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-// 🔥 Logging
 app.use(morgan("dev"));
 
 // Serve uploaded files
