@@ -39,7 +39,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://upskillr-internship-fc3s.vercel.app",
-  "https://upskillr-internship-dn8v.vercel.app"
+  "https://upskillr-internship-dn8v.vercel.app",
+  "https://upskillr-internship-rt2s.vercel.app"
 ];
 
 // ===================== SOCKET.IO CONFIG =====================
