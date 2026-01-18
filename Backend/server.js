@@ -40,20 +40,27 @@ if (!fs.existsSync(videosDir)) {
 // Socket.io configuration
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://upskillr-internship-fc3s.vercel.app"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-// CORS Configuration
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://upskillr-internship-fc3s.vercel.app"
+  ],
   credentials: true,
   optionsSuccessStatus: 200
 };
+
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -72,7 +79,6 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/feedback", feedbackRoutes);
-
 // Root route (MOVE HERE 👇)
 app.get("/", (req, res) => {
   res.status(200).json({
