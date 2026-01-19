@@ -11,10 +11,10 @@ const errorHandler = require("./middleware/errorHandler");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes"); // NEW
 const courseRoutes = require("./routes/courseRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
-
 const enrollmentRoutes = require("./routes/enrollmentRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
@@ -37,9 +37,9 @@ if (!fs.existsSync(videosDir)) {
   fs.mkdirSync(videosDir, { recursive: true });
 }
 
-// ULTRA SIMPLE CORS - ALLOW EVERYTHING (for testing)
+// CORS - ALLOW EVERYTHING (for testing)
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -48,7 +48,7 @@ app.use(cors({
 // Socket.io - ALLOW EVERYTHING (for testing)
 const io = socketIo(server, {
   cors: {
-    origin: "*", // Allow all origins
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -76,6 +76,7 @@ app.get("/api/health", (req, res) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes); // NEW
 app.use("/api/courses", courseRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/assignments", assignmentRoutes);
@@ -162,5 +163,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📹 Video uploads directory: ${videosDir}`);
+  // console.log(`📹 Video uploads directory: ${videosDir}`);
 });

@@ -9,6 +9,9 @@ const {
   updateAssignment,
   deleteAssignment,
   submitAssignment,
+  getAssignmentSubmissions,
+  getMySubmission,
+  gradeSubmission,
 } = require("../controllers/assignmentController");
 
 const upload = multer({ dest: 'uploads/' });
@@ -21,7 +24,12 @@ router.post("/:courseId", protect, roleCheck(["instructor"]), createAssignment);
 router.put("/:id", protect, roleCheck(["instructor"]), updateAssignment);
 router.delete("/:id", protect, roleCheck(["instructor"]), deleteAssignment);
 
-// Learner submission route
+// Learner submission routes
 router.post("/:assignmentId/submit", protect, roleCheck(["learner"]), upload.single("file"), submitAssignment);
+router.get("/:assignmentId/my-submission", protect, roleCheck(["learner"]), getMySubmission);
+
+// Instructor routes - view and grade submissions
+router.get("/:assignmentId/submissions", protect, roleCheck(["instructor"]), getAssignmentSubmissions);
+router.put("/submissions/:submissionId/grade", protect, roleCheck(["instructor"]), gradeSubmission);
 
 module.exports = router;

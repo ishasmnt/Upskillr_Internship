@@ -28,6 +28,7 @@ import ManageCourse from './Pages/Instructor/ManageCourse';
 import AddModules from './Pages/Instructor/AddModules';
 import AddAssignments from './Pages/Instructor/AddAssignments';
 import UploadNotes from './Pages/Instructor/UploadNotes';
+import ViewSubmissions from './Pages/Instructor/ViewSubmissions';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -552,6 +553,16 @@ const App = () => {
                   <UploadNotes 
                     instructorCourses={instructorCourses}
                     onRefresh={fetchInstructorCourses}
+                  />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/instructor/course/:courseId/assignments/:assignmentId/submissions" 
+              element={
+                <ProtectedRoute allowedRole="instructor">
+                  <ViewSubmissions 
+                    instructorCourses={instructorCourses}
                   />
                 </ProtectedRoute>
               } 

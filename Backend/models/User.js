@@ -11,7 +11,12 @@ const userSchema = new mongoose.Schema({
   },
   password: String,
   role: { type: String, enum: ["learner", "instructor"], default: "learner" },
-});
+  // NEW: Profile fields
+  bio: { type: String, default: '' },
+  location: { type: String, default: '' },
+  website: { type: String, default: '' },
+  avatar: { type: String, default: '' },
+}, { timestamps: true });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
