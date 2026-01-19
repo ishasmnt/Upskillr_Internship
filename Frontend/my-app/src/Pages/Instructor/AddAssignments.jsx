@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, FileText, Trash2, Calendar, Save, ArrowLeft, Eye } from 'lucide-react';
+import { Plus, FileText, Trash2, Calendar, Save, ArrowLeft } from 'lucide-react';
 import Button from '../../components/Button';
 import { assignmentAPI } from '../../services/api';
 import '../../styles/AddAssignments.css';
@@ -178,21 +178,12 @@ const AddAssignments = ({ instructorCourses, onRefresh }) => {
                       )}
                     </div>
                     
-                    <div className="add-assignments-item-actions">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => navigate(`/instructor/course/${courseId}/assignments/${assignment._id}/submissions`)}
-                      >
-                        <Eye className="w-4 h-4" /> View Submissions
-                      </Button>
-                      <button
-                        onClick={() => deleteAssignment(assignment._id)}
-                        className="add-assignments-delete-button"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => deleteAssignment(assignment._id)}
+                      className="add-assignments-delete-button"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
               ))}
