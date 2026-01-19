@@ -14,6 +14,7 @@ const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
+
 const enrollmentRoutes = require("./routes/enrollmentRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
