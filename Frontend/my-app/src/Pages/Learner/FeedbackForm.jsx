@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Send, CheckCircle, PartyPopper } from 'lucide-react';
 import Button from '../../components/Button';
 import socketService from '../../services/socket';
+import { feedbackAPI } from '../../services/api';
 
 const FeedbackForm = ({ courseName, courseId }) => {
   const navigate = useNavigate();
@@ -24,44 +25,32 @@ const FeedbackForm = ({ courseName, courseId }) => {
     setSubmitting(true);
 
     try {
-      // Send feedback to backend
-      const response = await fetch('http://localhost:5000/api/feedback/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseName: courseName,
-          rating: rating,
-          comment: comment,
-        }),
+      // Use the feedbackAPI from api.js for consistent URL handling
+      const data = await feedbackAPI.submitFeedback({
+        courseName: courseName,
+        rating: rating,
+        comment: comment,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("✅ Feedback submitted:", data);
-        
-        // Emit real-time socket event to notify instructor
-        socketService.notifyFeedbackSubmitted(courseId, {
-          courseName,
-          rating,
-          comment,
-          timestamp: new Date()
-        });
-        
-        setSubmitted(true);
-        
-        // Redirect back to dashboard after 2 seconds
-        setTimeout(() => {
-          navigate('/learner/dashboard');
-        }, 2000);
-      } else {
-        alert("Failed to send feedback to server.");
-        setSubmitting(false);
-      }
+      console.log("✅ Feedback submitted:", data);
+      
+      // Emit real-time socket event to notify instructor
+      socketService.notifyFeedbackSubmitted(courseId, {
+        courseName,
+        rating,
+        comment,
+        timestamp: new Date()
+      });
+      
+      setSubmitted(true);
+      
+      // Redirect back to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate('/learner/dashboard');
+      }, 2000);
     } catch (error) {
-      console.error("Network Error:", error);
-      alert("Could not connect to the backend. Is your server running?");
+      console.error("Feedback submission error:", error);
+      alert("Could not submit feedback. Please check your connection and try again.");
       setSubmitting(false);
     }
   };
