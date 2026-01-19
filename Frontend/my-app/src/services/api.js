@@ -1,17 +1,14 @@
 // src/services/api.js
 import axios from 'axios';
 
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
-  baseURL: API_URL, // ✅ Just use API_URL directly - NO /api added here!
+  baseURL: API_URL,
   headers: { 
     'Content-Type': 'application/json',
   },
 });
-
-
 
 // Add token to requests
 api.interceptors.request.use(
@@ -65,6 +62,12 @@ export const authAPI = {
     const response = await api.get('/auth/me');
     return response.data;
   },
+
+  // NEW: Update user profile
+  updateProfile: async (profileData) => {
+    const response = await api.put('/auth/profile', profileData);
+    return response.data;
+  },
 };
 
 // ==================== COURSE API ====================
@@ -72,9 +75,7 @@ export const courseAPI = {
   getAllCourses: async () => {
     try {
       const response = await api.get('/courses');
-      console.log('✅ Courses API Response:', response.data);
       
-      // Handle different response formats
       if (Array.isArray(response.data)) {
         return response.data;
       } else if (response.data && response.data.courses) {
@@ -84,7 +85,7 @@ export const courseAPI = {
       }
       return [];
     } catch (error) {
-      console.error('❌ Error fetching courses:', error);
+      console.error('Error fetching courses:', error);
       throw error;
     }
   },
@@ -115,7 +116,7 @@ export const courseAPI = {
   },
 };
 
-// ==================== MODULE API (Updated with Video Upload) ====================
+// ==================== MODULE API ====================
 export const moduleAPI = {
   getModules: async (courseId) => {
     const response = await api.get(`/modules/${courseId}`);
@@ -127,7 +128,6 @@ export const moduleAPI = {
     return response.data;
   },
 
-  // NEW: Create module with video file upload
   createModuleWithVideo: async (courseId, formData, onUploadProgress) => {
     const response = await api.post(`/modules/${courseId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -146,7 +146,6 @@ export const moduleAPI = {
     return response.data;
   },
 
-  // NEW: Get video stream URL
   getVideoStreamUrl: (moduleId) => {
     return `${API_URL}/modules/${moduleId}/stream`;
   },
@@ -185,10 +184,27 @@ export const assignmentAPI = {
     });
     return response.data;
   },
+
+  // NEW: Get my submission for an assignment
+  getMySubmission: async (assignmentId) => {
+    const response = await api.get(`/assignments/${assignmentId}/my-submission`);
+    return response.data;
+  },
+
+  // NEW: Get all submissions for an assignment (Instructor)
+  getAssignmentSubmissions: async (assignmentId) => {
+    const response = await api.get(`/assignments/${assignmentId}/submissions`);
+    return response.data;
+  },
+
+  // NEW: Grade a submission (Instructor)
+  gradeSubmission: async (submissionId, gradeData) => {
+    const response = await api.put(`/assignments/submissions/${submissionId}/grade`, gradeData);
+    return response.data;
+  },
 };
 
 // ==================== NOTE API ====================
-// Find the noteAPI section and add previewNote function
 export const noteAPI = {
   getNotes: async (courseId) => {
     const response = await api.get(`/notes/${courseId}`);
@@ -226,12 +242,12 @@ export const noteAPI = {
     return response.data;
   },
 
-  // NEW: Preview note
   previewNote: async (id) => {
     const response = await api.get(`/notes/${id}/preview`);
     return response.data;
   },
 };
+
 // ==================== ENROLLMENT API ====================
 export const enrollmentAPI = {
   getMyEnrollments: async () => {

@@ -56,7 +56,7 @@ exports.deleteAssignment = async (req, res) => {
   }
 };
 
-// NEW: Submit assignment endpoint
+// Submit assignment endpoint
 exports.submitAssignment = async (req, res) => {
   try {
     const { text } = req.body;
@@ -65,6 +65,16 @@ exports.submitAssignment = async (req, res) => {
     // Validate that either text or file is provided
     if (!text && !req.file) {
       return res.status(400).json({ message: 'Submission text or file is required' });
+    }
+
+    // Check if already submitted
+    const existingSubmission = await AssignmentSubmission.findOne({
+      assignment: assignmentId,
+      user: req.user._id
+    });
+
+    if (existingSubmission) {
+      return res.status(400).json({ message: 'You have already submitted this assignment' });
     }
 
     // Create submission
@@ -81,6 +91,69 @@ exports.submitAssignment = async (req, res) => {
     });
 
     res.status(201).json(submission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// NEW: Get submissions for an assignment (Instructor)
+exports.getAssignmentSubmissions = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    
+    const submissions = await AssignmentSubmission.find({ assignment: assignmentId })
+      .populate('user', 'name email')
+      .populate('assignment', 'title totalMarks')
+      .sort({ submittedAt: -1 });
+
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// NEW: Get learner's submission for an assignment
+exports.getMySubmission = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    
+    const submission = await AssignmentSubmission.findOne({
+      assignment: assignmentId,
+      user: req.user._id
+    }).populate('assignment', 'title totalMarks dueDate');
+
+    res.json(submission);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// NEW: Grade a submission (Instructor)
+exports.gradeSubmission = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { grade, feedback } = req.body;
+
+    const submission = await AssignmentSubmission.findById(submissionId)
+      .populate('assignment');
+
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    // Verify instructor owns the course
+    const assignment = await Assignment.findById(submission.assignment._id).populate('course');
+    const course = await Course.findById(assignment.course);
+    
+    if (course.instructor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    submission.grade = grade;
+    submission.feedback = feedback;
+    await submission.save();
+
+    res.json(submission);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
