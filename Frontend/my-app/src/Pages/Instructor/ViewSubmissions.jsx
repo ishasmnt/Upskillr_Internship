@@ -20,6 +20,11 @@ const ViewSubmissions = ({ instructorCourses }) => {
   const [grading, setGrading] = useState(false);
 
   useEffect(() => {
+    console.log('ViewSubmissions component mounted');
+    console.log('Course ID:', courseId);
+    console.log('Assignment ID:', assignmentId);
+    console.log('Instructor Courses:', instructorCourses);
+    
     if (assignmentId) {
       fetchSubmissions();
     }
@@ -27,14 +32,18 @@ const ViewSubmissions = ({ instructorCourses }) => {
 
   const fetchSubmissions = async () => {
     try {
+      console.log('Fetching submissions for assignment:', assignmentId);
       setLoading(true);
       // Fetch assignment details
       const assignments = await assignmentAPI.getAssignments(courseId);
+      console.log('Fetched assignments:', assignments);
       const currentAssignment = assignments.find(a => a._id === assignmentId);
+      console.log('Current assignment:', currentAssignment);
       setAssignment(currentAssignment);
       
       // Fetch submissions
       const submissionsData = await assignmentAPI.getAssignmentSubmissions(assignmentId);
+      console.log('Fetched submissions:', submissionsData);
       setSubmissions(submissionsData);
     } catch (error) {
       console.error('Error fetching submissions:', error);
