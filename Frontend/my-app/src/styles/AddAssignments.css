@@ -356,3 +356,67 @@
   flex: 1 1 0%;
 }
 
+/* Responsive Design */
+@media (max-width: 768px) {
+  .add-assignments-page {
+    padding-top: 6rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .add-assignments-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .add-assignments-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .add-assignments-item-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .add-assignments-item-content {
+    width: 100%;
+  }
+
+  .add-assignments-item-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .add-assignments-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .add-assignments-modal-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-assignments-page {
+    padding-top: 5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .add-assignments-card {
+    padding: 1.5rem;
+  }
+
+  .add-assignments-title {
+    font-size: 1.5rem;
+  }
+
+  .add-assignments-item-title {
+    font-size: 1.25rem;
+  }
+}
+

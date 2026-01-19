@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FileText, User, Calendar, Award, CheckCircle, ArrowLeft, Send } from 'lucide-react';
 import Button from '../../components/Button';
 import { assignmentAPI } from '../../services/api';
+import ScrollToTop from '../../components/ScrollToTop';
 import '../../styles/ViewSubmissions.css';
 
 const ViewSubmissions = ({ instructorCourses }) => {
@@ -210,101 +211,104 @@ const ViewSubmissions = ({ instructorCourses }) => {
   }
 
   return (
-    <div className="view-submissions-page">
-      <div className="view-submissions-container">
-        <button 
-          onClick={() => navigate(`/instructor/course/${courseId}/manage`)}
-          className="view-submissions-back-button"
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to Course Management
-        </button>
+    <>
+      <ScrollToTop />
+      <div className="view-submissions-page">
+        <div className="view-submissions-container">
+          <button 
+            onClick={() => navigate(`/instructor/course/${courseId}/manage`)}
+            className="view-submissions-back-button"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Course Management
+          </button>
 
-        <div className="view-submissions-header">
-          <div>
-            <h1 className="view-submissions-title">Assignment Submissions</h1>
-            <p className="view-submissions-subtitle">
-              {assignment?.title} - {course.title}
-            </p>
-          </div>
-          <div className="view-submissions-stats">
-            <div className="view-submissions-stat-item">
-              <span className="view-submissions-stat-value">{submissions.length}</span>
-              <span className="view-submissions-stat-label">Total Submissions</span>
+          <div className="view-submissions-header">
+            <div>
+              <h1 className="view-submissions-title">Assignment Submissions</h1>
+              <p className="view-submissions-subtitle">
+                {assignment?.title} - {course.title}
+              </p>
             </div>
-            <div className="view-submissions-stat-item">
-              <span className="view-submissions-stat-value">
-                {submissions.filter(s => s.grade !== null).length}
-              </span>
-              <span className="view-submissions-stat-label">Graded</span>
-            </div>
-            <div className="view-submissions-stat-item">
-              <span className="view-submissions-stat-value">
-                {submissions.filter(s => s.grade === null).length}
-              </span>
-              <span className="view-submissions-stat-label">Pending</span>
-            </div>
-          </div>
-        </div>
-
-        {submissions.length === 0 ? (
-          <div className="view-submissions-empty-state">
-            <FileText className="view-submissions-empty-icon" />
-            <h3 className="view-submissions-empty-title">No submissions yet</h3>
-            <p className="view-submissions-empty-description">
-              Students haven't submitted this assignment yet
-            </p>
-          </div>
-        ) : (
-          <div className="view-submissions-list">
-            {submissions.map((submission) => (
-              <div key={submission._id} className="view-submissions-card">
-                <div className="view-submissions-card-header">
-                  <div className="view-submissions-card-student">
-                    <div className="view-submissions-card-avatar">
-                      {submission.user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="view-submissions-card-name">{submission.user.name}</h3>
-                      <p className="view-submissions-card-email">{submission.user.email}</p>
-                    </div>
-                  </div>
-                  <div className="view-submissions-card-actions">
-                    {submission.grade !== null ? (
-                      <div className="view-submissions-card-grade-badge">
-                        <Award className="w-4 h-4" />
-                        {submission.grade}/{assignment.totalMarks}
-                      </div>
-                    ) : (
-                      <span className="view-submissions-card-pending-badge">
-                        Pending Review
-                      </span>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setSelectedSubmission(submission)}
-                    >
-                      {submission.grade !== null ? 'View' : 'Review & Grade'}
-                    </Button>
-                  </div>
-                </div>
-                <div className="view-submissions-card-meta">
-                  <div className="view-submissions-card-meta-item">
-                    <Calendar className="w-4 h-4" />
-                    Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                  </div>
-                  {submission.file && (
-                    <div className="view-submissions-card-meta-item">
-                      <FileText className="w-4 h-4" />
-                      File attached
-                    </div>
-                  )}
-                </div>
+            <div className="view-submissions-stats">
+              <div className="view-submissions-stat-item">
+                <span className="view-submissions-stat-value">{submissions.length}</span>
+                <span className="view-submissions-stat-label">Total Submissions</span>
               </div>
-            ))}
+              <div className="view-submissions-stat-item">
+                <span className="view-submissions-stat-value">
+                  {submissions.filter(s => s.grade !== null).length}
+                </span>
+                <span className="view-submissions-stat-label">Graded</span>
+              </div>
+              <div className="view-submissions-stat-item">
+                <span className="view-submissions-stat-value">
+                  {submissions.filter(s => s.grade === null).length}
+                </span>
+                <span className="view-submissions-stat-label">Pending</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          {submissions.length === 0 ? (
+            <div className="view-submissions-empty-state">
+              <FileText className="view-submissions-empty-icon" />
+              <h3 className="view-submissions-empty-title">No submissions yet</h3>
+              <p className="view-submissions-empty-description">
+                Students haven't submitted this assignment yet
+              </p>
+            </div>
+          ) : (
+            <div className="view-submissions-list">
+              {submissions.map((submission) => (
+                <div key={submission._id} className="view-submissions-card">
+                  <div className="view-submissions-card-header">
+                    <div className="view-submissions-card-student">
+                      <div className="view-submissions-card-avatar">
+                        {submission.user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="view-submissions-card-name">{submission.user.name}</h3>
+                        <p className="view-submissions-card-email">{submission.user.email}</p>
+                      </div>
+                    </div>
+                    <div className="view-submissions-card-actions">
+                      {submission.grade !== null ? (
+                        <div className="view-submissions-card-grade-badge">
+                          <Award className="w-4 h-4" />
+                          {submission.grade}/{assignment.totalMarks}
+                        </div>
+                      ) : (
+                        <span className="view-submissions-card-pending-badge">
+                          Pending Review
+                        </span>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setSelectedSubmission(submission)}
+                      >
+                        {submission.grade !== null ? 'View' : 'Review & Grade'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="view-submissions-card-meta">
+                    <div className="view-submissions-card-meta-item">
+                      <Calendar className="w-4 h-4" />
+                      Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
+                    </div>
+                    {submission.file && (
+                      <div className="view-submissions-card-meta-item">
+                        <FileText className="w-4 h-4" />
+                        File attached
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

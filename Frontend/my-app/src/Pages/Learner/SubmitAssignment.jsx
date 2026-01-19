@@ -11,6 +11,10 @@ import {
   Send,
   Award
 } from 'lucide-react';
+import Button from '../../components/Button';
+import { assignmentAPI } from '../../services/api';
+import ScrollToTop from '../../components/ScrollToTop';
+import '../../styles/SubmitAssignment.css';
 
 const SubmitAssignment = ({ enrolledCourses }) => {
   const navigate = useNavigate();
@@ -71,9 +75,12 @@ const SubmitAssignment = ({ enrolledCourses }) => {
 
   if (!course) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
+      <div className="submit-assignment-page no-course-found">
         <h1>Course not found</h1>
-        <button onClick={() => navigate('/learner/dashboard')} style={{ marginTop: '20px', padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+        <button 
+          onClick={() => navigate('/learner/dashboard')} 
+          className="submit-assignment-list-item-button"
+        >
           Back to Dashboard
         </button>
       </div>
@@ -134,253 +141,229 @@ const SubmitAssignment = ({ enrolledCourses }) => {
     const submission = submissions[selectedAssignment._id];
     
     return (
-      <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
-        <button
-          onClick={() => setSelectedAssignment(null)}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', color: '#2563eb' }}
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to Assignments
-        </button>
+      <>
+        <ScrollToTop />
+        <div className="submit-assignment-detail-container">
+          <button
+            onClick={() => setSelectedAssignment(null)}
+            className="submit-assignment-back-button"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Assignments
+          </button>
 
-        <div style={{ background: 'white', borderRadius: '16px', padding: '30px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ marginBottom: '30px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>{selectedAssignment.title}</h1>
-              {submission ? (
-                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#dcfce7', color: '#166534', fontSize: '0.875rem', fontWeight: '600' }}>
-                  Submitted
-                </span>
-              ) : (
-                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#fef3c7', color: '#92400e', fontSize: '0.875rem', fontWeight: '600' }}>
-                  Pending
-                </span>
-              )}
-            </div>
-            <p style={{ color: '#6b7280', marginBottom: '20px' }}>{selectedAssignment.description}</p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '20px' }}>
-              <div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Due Date</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
-                  <Calendar className="w-4 h-4" />
-                  {new Date(selectedAssignment.dueDate).toLocaleDateString()}
+          <div className="submit-assignment-detail-card">
+            <div className="submit-assignment-detail-header">
+              <div className="submit-assignment-detail-title-row">
+                <h1 className="submit-assignment-detail-title">{selectedAssignment.title}</h1>
+                {submission ? (
+                  <span className="submit-assignment-status-badge submit-assignment-status-submitted">
+                    Submitted
+                  </span>
+                ) : (
+                  <span className="submit-assignment-status-badge submit-assignment-status-pending">
+                    Pending
+                  </span>
+                )}
+              </div>
+              <p className="submit-assignment-detail-description">{selectedAssignment.description}</p>
+              
+              <div className="submit-assignment-detail-meta-grid">
+                <div className="submit-assignment-detail-meta-item">
+                  <div className="submit-assignment-detail-meta-label">Due Date</div>
+                  <div className="submit-assignment-detail-meta-value">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(selectedAssignment.dueDate).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="submit-assignment-detail-meta-item">
+                  <div className="submit-assignment-detail-meta-label">Total Marks</div>
+                  <div className="submit-assignment-detail-meta-value">{selectedAssignment.totalMarks} points</div>
+                </div>
+                <div className="submit-assignment-detail-meta-item">
+                  <div className="submit-assignment-detail-meta-label">Type</div>
+                  <div className="submit-assignment-detail-meta-value">{selectedAssignment.type}</div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Total Marks</div>
-                <div style={{ fontWeight: '600' }}>{selectedAssignment.totalMarks} points</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Type</div>
-                <div style={{ fontWeight: '600' }}>{selectedAssignment.type}</div>
-              </div>
             </div>
-          </div>
 
-          {selectedAssignment.instructions && (
-            <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '12px', marginBottom: '30px' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '12px' }}>Instructions</h3>
-              <p style={{ color: '#4b5563', lineHeight: '1.6' }}>{selectedAssignment.instructions}</p>
-            </div>
-          )}
-
-          {submission ? (
-            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <CheckCircle className="w-6 h-6 text-green-600" />
-                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#166534' }}>Your Submission</h3>
+            {selectedAssignment.instructions && (
+              <div className="submit-assignment-instructions">
+                <h3 className="submit-assignment-instructions-title">Instructions</h3>
+                <p className="submit-assignment-instructions-text">{selectedAssignment.instructions}</p>
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px' }}>Submitted on: {new Date(submission.submittedAt).toLocaleString()}</p>
-                <div style={{ background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-                  <p style={{ whiteSpace: 'pre-wrap' }}>{submission.text}</p>
+            )}
+
+            {submission ? (
+              <div className="submit-assignment-submission-display">
+                <div className="submit-assignment-submission-header">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <h3 className="submit-assignment-submission-title">Your Submission</h3>
+                </div>
+                <div className="submit-assignment-submission-content">
+                  <p className="submit-assignment-submission-text">{submission.text}</p>
                   {submission.file && (
-                    <div style={{ marginTop: '12px', padding: '12px', background: '#f9fafb', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="submit-assignment-submission-file">
                       <FileText className="w-4 h-4" />
                       <span>{submission.file.originalName}</span>
                     </div>
                   )}
                 </div>
-              </div>
-              {submission.grade !== null && (
-                <div style={{ marginTop: '16px', padding: '16px', background: 'white', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <Award className="w-5 h-5 text-green-600" />
-                    <span style={{ fontWeight: '600', fontSize: '1.125rem' }}>Grade: {submission.grade}/{selectedAssignment.totalMarks}</span>
-                  </div>
-                  {submission.feedback && (
-                    <div>
-                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>Feedback:</p>
-                      <p style={{ color: '#374151' }}>{submission.feedback}</p>
+                {submission.grade !== null && (
+                  <div className="submit-assignment-grade-display">
+                    <div className="submit-assignment-grade-header">
+                      <Award className="w-5 h-5 text-green-600" />
+                      <span>Grade: {submission.grade}/{selectedAssignment.totalMarks}</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Your Submission</label>
-                <textarea
-                  rows="8"
-                  value={submissionText}
-                  onChange={(e) => setSubmissionText(e.target.value)}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '1rem' }}
-                  placeholder="Enter your submission text here..."
-                  disabled={submitting}
-                />
+                    {submission.feedback && (
+                      <div>
+                        <p className="submit-assignment-feedback-label">Feedback:</p>
+                        <p className="submit-assignment-feedback-text">{submission.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Upload File (Optional)</label>
-                <div style={{ border: '2px dashed #d1d5db', borderRadius: '12px', padding: '40px', textAlign: 'center', cursor: 'pointer', background: '#f9fafb' }}>
-                  <input
-                    type="file"
-                    id="assignmentFile"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
+            ) : (
+              <div className="submit-assignment-form">
+                <div>
+                  <label className="submit-assignment-form-label">Your Submission</label>
+                  <textarea
+                    rows="8"
+                    value={submissionText}
+                    onChange={(e) => setSubmissionText(e.target.value)}
+                    className="submit-assignment-form-textarea"
+                    placeholder="Enter your submission text here..."
                     disabled={submitting}
                   />
-                  <label htmlFor="assignmentFile" style={{ cursor: 'pointer' }}>
-                    <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    {uploadedFile ? (
-                      <>
-                        <p style={{ fontWeight: '600', marginBottom: '4px' }}>{uploadedFile.name}</p>
-                        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{(uploadedFile.size / 1024).toFixed(2)} KB</p>
-                      </>
-                    ) : (
-                      <>
-                        <p style={{ fontWeight: '600', marginBottom: '4px' }}>Click to upload</p>
-                        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>PDF, DOC, ZIP (max 25MB)</p>
-                      </>
-                    )}
-                  </label>
                 </div>
-              </div>
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: submitting ? '#9ca3af' : '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1.125rem',
-                  fontWeight: '600',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Send className="w-5 h-5" /> {submitting ? 'Submitting...' : 'Submit Assignment'}
-              </button>
-            </>
-          )}
+                <div>
+                  <label className="submit-assignment-form-label">Upload File (Optional)</label>
+                  <div className="submit-assignment-upload-area">
+                    <input
+                      type="file"
+                      id="assignmentFile"
+                      onChange={handleFileUpload}
+                      className="submit-assignment-upload-input"
+                      disabled={submitting}
+                    />
+                    <label htmlFor="assignmentFile" className="submit-assignment-upload-label">
+                      <Upload className="submit-assignment-upload-icon" />
+                      {uploadedFile ? (
+                        <>
+                          <p className="submit-assignment-upload-text">{uploadedFile.name}</p>
+                          <p className="submit-assignment-upload-help">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="submit-assignment-upload-text">Click to upload</p>
+                          <p className="submit-assignment-upload-help">PDF, DOC, ZIP (max 25MB)</p>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="submit-assignment-submit-button"
+                >
+                  <Send className="w-5 h-5" /> {submitting ? 'Submitting...' : 'Submit Assignment'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <p>Loading assignments...</p>
+      <div className="submit-assignment-page">
+        <div className="submit-assignment-container">
+          <p>Loading assignments...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <button
-        onClick={() => navigate('/learner/dashboard')}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '20px', color: '#2563eb' }}
-      >
-        <ArrowLeft className="w-5 h-5" /> Back to Dashboard
-      </button>
+    <>
+      <ScrollToTop />
+      <div className="submit-assignment-page">
+        <div className="submit-assignment-container">
+          <button
+            onClick={() => navigate('/learner/dashboard')}
+            className="submit-assignment-back-button"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Dashboard
+          </button>
 
-      <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Course Assignments</h1>
-      <p style={{ color: '#6b7280', marginBottom: '30px' }}>Course: {course.title}</p>
+          <h1 className="submit-assignment-title">Course Assignments</h1>
+          <p className="submit-assignment-subtitle">Course: {course.title}</p>
 
-      {assignments.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
-          <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p>No assignments available for this course yet</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {assignments.map((assignment) => {
-            const submission = submissions[assignment._id];
-            const isSubmitted = !!submission;
-            
-            return (
-              <div
-                key={assignment._id}
-                style={{
-                  background: 'white',
-                  padding: '24px',
-                  borderRadius: '16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  border: isSubmitted ? '2px solid #86efac' : '1px solid #e5e7eb'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '8px' }}>{assignment.title}</h3>
-                    <p style={{ color: '#6b7280', marginBottom: '12px' }}>{assignment.description}</p>
-                    <div style={{ display: 'flex', gap: '20px', fontSize: '0.875rem', color: '#6b7280' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar className="w-4 h-4" />
-                        Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Award className="w-4 h-4" />
-                        {assignment.totalMarks} points
-                      </div>
-                      {isSubmitted && submission.grade !== null && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: '600' }}>
-                          <CheckCircle className="w-4 h-4" />
-                          Grade: {submission.grade}/{assignment.totalMarks}
+          {assignments.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
+              <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p>No assignments available for this course yet</p>
+            </div>
+          ) : (
+            <div className="submit-assignment-list">
+              {assignments.map((assignment) => {
+                const submission = submissions[assignment._id];
+                const isSubmitted = !!submission;
+                
+                return (
+                  <div key={assignment._id} className="submit-assignment-list-item">
+                    <div className="submit-assignment-list-item-header">
+                      <div className="submit-assignment-list-item-content">
+                        <h3 className="submit-assignment-list-item-title">{assignment.title}</h3>
+                        <p className="submit-assignment-list-item-description">{assignment.description}</p>
+                        <div className="submit-assignment-list-item-meta">
+                          <div className="submit-assignment-list-item-meta-item">
+                            <Calendar className="w-4 h-4" />
+                            Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                          </div>
+                          <div className="submit-assignment-list-item-meta-item">
+                            <Award className="w-4 h-4" />
+                            {assignment.totalMarks} points
+                          </div>
+                          {isSubmitted && submission.grade !== null && (
+                            <div className="submit-assignment-list-item-meta-item" style={{ color: '#059669', fontWeight: '600' }}>
+                              <CheckCircle className="w-4 h-4" />
+                              Grade: {submission.grade}/{assignment.totalMarks}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                      <div className="submit-assignment-list-item-actions">
+                        {isSubmitted ? (
+                          <span className="submit-assignment-status-badge submit-assignment-status-submitted">
+                            <CheckCircle className="w-4 h-4" /> Submitted
+                          </span>
+                        ) : (
+                          <span className="submit-assignment-status-badge submit-assignment-status-pending">
+                            Pending
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setSelectedAssignment(assignment)}
+                          className={`submit-assignment-list-item-button ${isSubmitted ? 'view' : ''}`}
+                        >
+                          {isSubmitted ? 'View' : 'Submit'}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    {isSubmitted ? (
-                      <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#dcfce7', color: '#166534', fontSize: '0.875rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle className="w-4 h-4" /> Submitted
-                      </span>
-                    ) : (
-                      <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#fef3c7', color: '#92400e', fontSize: '0.875rem', fontWeight: '600' }}>
-                        Pending
-                      </span>
-                    )}
-                    <button
-                      onClick={() => setSelectedAssignment(assignment)}
-                      style={{
-                        padding: '10px 20px',
-                        background: isSubmitted ? '#f3f4f6' : '#2563eb',
-                        color: isSubmitted ? '#374151' : 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {isSubmitted ? 'View' : 'Submit'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 
