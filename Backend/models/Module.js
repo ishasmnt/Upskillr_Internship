@@ -5,13 +5,13 @@ const moduleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   
-  // Video file fields (replacing videoUrl)
+  
   videoFileName: String,
   videoPath: String,        // Path to uploaded video file
   videoSize: String,        // File size in MB
   
   duration: String,
-  resources: [String],      // Array of resource names
+  resources: [String],      
 }, { timestamps: true });
 
 module.exports = mongoose.model('Module', moduleSchema);
