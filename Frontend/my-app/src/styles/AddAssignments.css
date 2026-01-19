@@ -228,6 +228,12 @@
   background-color: rgba(239, 68, 68, 0.1);
 }
 
+.add-assignments-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .add-assignments-tips {
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
