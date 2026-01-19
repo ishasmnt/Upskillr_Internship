@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, FileText, Trash2, Calendar, Save, ArrowLeft } from 'lucide-react';
+import { Plus, FileText, Trash2, Calendar, Save, ArrowLeft, Users } from 'lucide-react';
 import Button from '../../components/Button';
 import { assignmentAPI } from '../../services/api';
 import '../../styles/AddAssignments.css';
@@ -12,6 +12,7 @@ const AddAssignments = ({ instructorCourses, onRefresh }) => {
   const course = instructorCourses.find(c => c._id === courseId);
   
   const [assignments, setAssignments] = useState([]);
+  const [submissionCounts, setSubmissionCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,18 @@ const AddAssignments = ({ instructorCourses, onRefresh }) => {
       setLoading(true);
       const data = await assignmentAPI.getAssignments(courseId);
       setAssignments(data);
+      
+      // Fetch submission counts for each assignment
+      const counts = {};
+      for (const assignment of data) {
+        try {
+          const submissions = await assignmentAPI.getAssignmentSubmissions(assignment._id);
+          counts[assignment._id] = submissions.length;
+        } catch (err) {
+          counts[assignment._id] = 0;
+        }
+      }
+      setSubmissionCounts(counts);
     } catch (error) {
       console.error('Error fetching assignments:', error);
     } finally {
@@ -178,12 +191,21 @@ const AddAssignments = ({ instructorCourses, onRefresh }) => {
                       )}
                     </div>
                     
-                    <button
-                      onClick={() => deleteAssignment(assignment._id)}
-                      className="add-assignments-delete-button"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <div className="add-assignments-item-actions">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate(`/instructor/course/${courseId}/assignments/${assignment._id}/submissions`)}
+                      >
+                        <Users className="w-4 h-4" /> View Submissions ({submissionCounts[assignment._id] || 0})
+                      </Button>
+                      <button
+                        onClick={() => deleteAssignment(assignment._id)}
+                        className="add-assignments-delete-button"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -8,6 +8,7 @@ const MyProfile = ({ userRole, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [stats, setStats] = useState({});
   const [profile, setProfile] = useState({
     name: '',
     bio: '',
@@ -18,53 +19,32 @@ const MyProfile = ({ userRole, user }) => {
 
   useEffect(() => {
     fetchUserProfile();
+    fetchUserStats();
   }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchUserStats = async () => {
     try {
-      setLoading(true);
-      // Try to get from API
-      const userData = await authAPI.getCurrentUser();
-      setCurrentUser(userData);
-      setProfile({
-        name: userData.name || 'User',
-        bio: userData.bio || (userRole === 'learner' 
-          ? 'Passionate learner exploring new skills and technologies.'
-          : 'Experienced educator helping students achieve their goals.'),
-        location: userData.location || 'Location',
-        website: userData.website || 'www.example.com',
-        joinDate: userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'Recently',
-      });
+      const statsData = await authAPI.getUserStats();
+      setStats(statsData);
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      // Fallback to localStorage user
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      setCurrentUser(storedUser);
-      setProfile({
-        name: storedUser.name || user?.name || 'User',
-        bio: userRole === 'learner' 
-          ? 'Passionate learner exploring the world of web development and design.'
-          : 'Experienced educator and software engineer with years of teaching experience.',
-        location: 'Your Location',
-        website: 'www.yourwebsite.com',
-        joinDate: 'Recently',
-      });
+      console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // You can later add stats from backend
-  const stats = userRole === 'learner' ? {
-    coursesCompleted: 0, // Will be calculated from enrollments
-    hoursLearned: 0,
-    certificates: 0,
-    currentStreak: 0,
-  } : {
-    coursesCreated: 0, // Will come from backend
-    totalStudents: 0,
-    averageRating: 0,
-    totalRevenue: '₹0',
+  const learnerStats = {
+    coursesCompleted: stats.coursesCompleted || 0,
+    hoursLearned: stats.hoursLearned || 0,
+    certificates: stats.certificates || 0,
+    currentStreak: stats.currentStreak || 0,
+  };
+
+  const instructorStats = {
+    coursesCreated: stats.coursesCreated || 0,
+    totalStudents: stats.totalStudents || 0,
+    averageRating: stats.averageRating || 0,
+    totalRevenue: stats.totalRevenue || '₹0',
   };
 
   const recentActivity = []; // Will come from backend
@@ -81,13 +61,46 @@ const MyProfile = ({ userRole, user }) => {
 
   const handleSave = async () => {
     try {
-      // TODO: Add API call to update profile
-      // await userAPI.updateProfile(profile);
+      const updatedUser = await authAPI.updateProfile(profile);
+      setCurrentUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
       setIsEditing(false);
-      alert('Profile update feature coming soon!');
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile');
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = await authAPI.getCurrentUser();
+      setCurrentUser(userData);
+      setProfile({
+        name: userData.name || 'User',
+        bio: userData.bio || (userRole === 'learner' 
+          ? 'Passionate learner exploring new skills and technologies.'
+          : 'Experienced educator helping students achieve their goals.'),
+        location: userData.location || 'Location',
+        website: userData.website || 'www.example.com',
+        joinDate: userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'Recently',
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      setCurrentUser(storedUser);
+      setProfile({
+        name: storedUser.name || user?.name || 'User',
+        bio: userRole === 'learner' 
+          ? 'Passionate learner exploring the world of web development and design.'
+          : 'Experienced educator and software engineer with years of teaching experience.',
+        location: 'Your Location',
+        website: 'www.yourwebsite.com',
+        joinDate: 'Recently',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -187,14 +200,14 @@ const MyProfile = ({ userRole, user }) => {
                   <div className="my-profile-stat-icon-wrapper">
                     <Award className="my-profile-stat-icon" />
                   </div>
-                  <div className="my-profile-stat-value">{stats.coursesCompleted}</div>
+                  <div className="my-profile-stat-value">{learnerStats.coursesCompleted}</div>
                   <div className="my-profile-stat-label">Courses Completed</div>
                 </div>
                 <div className="my-profile-stat-card my-profile-stat-card-green">
                   <div className="my-profile-stat-icon-wrapper">
                     <Star className="my-profile-stat-icon" />
                   </div>
-                  <div className="my-profile-stat-value">{stats.certificates}</div>
+                  <div className="my-profile-stat-value">{learnerStats.certificates}</div>
                   <div className="my-profile-stat-label">Certificates</div>
                 </div>
               </>
@@ -204,21 +217,21 @@ const MyProfile = ({ userRole, user }) => {
                   <div className="my-profile-stat-icon-wrapper">
                     <BookOpen className="my-profile-stat-icon" />
                   </div>
-                  <div className="my-profile-stat-value">{stats.coursesCreated}</div>
+                  <div className="my-profile-stat-value">{instructorStats.coursesCreated}</div>
                   <div className="my-profile-stat-label">Courses Created</div>
                 </div>
                 <div className="my-profile-stat-card my-profile-stat-card-blue">
                   <div className="my-profile-stat-icon-wrapper">
                     <Users className="my-profile-stat-icon" />
                   </div>
-                  <div className="my-profile-stat-value">{stats.totalStudents.toLocaleString()}</div>
+                  <div className="my-profile-stat-value">{instructorStats.totalStudents.toLocaleString()}</div>
                   <div className="my-profile-stat-label">Total Students</div>
                 </div>
                 <div className="my-profile-stat-card my-profile-stat-card-green">
                   <div className="my-profile-stat-icon-wrapper">
                     <Star className="my-profile-stat-icon" />
                   </div>
-                  <div className="my-profile-stat-value">{stats.averageRating || 'N/A'}</div>
+                  <div className="my-profile-stat-value">{instructorStats.averageRating || 'N/A'}</div>
                   <div className="my-profile-stat-label">Average Rating</div>
                 </div>
               </>

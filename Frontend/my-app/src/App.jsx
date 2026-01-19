@@ -27,6 +27,7 @@ import InstructorDashboard from './Pages/Instructor/Dashboard';
 import ManageCourse from './Pages/Instructor/ManageCourse';
 import AddModules from './Pages/Instructor/AddModules';
 import AddAssignments from './Pages/Instructor/AddAssignments';
+import ViewSubmissions from './Pages/Instructor/ViewSubmissions';
 import UploadNotes from './Pages/Instructor/UploadNotes';
 
 const App = () => {
@@ -542,6 +543,14 @@ const App = () => {
                     instructorCourses={instructorCourses}
                     onRefresh={fetchInstructorCourses}
                   />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/instructor/course/:courseId/assignments/:assignmentId/submissions" 
+              element={
+                <ProtectedRoute allowedRole="instructor">
+                  <ViewSubmissions instructorCourses={instructorCourses} />
                 </ProtectedRoute>
               } 
             />

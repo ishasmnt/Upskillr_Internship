@@ -59,13 +59,19 @@ export const authAPI = {
   },
 
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/users/me');
     return response.data;
   },
 
   // NEW: Update user profile
   updateProfile: async (profileData) => {
-    const response = await api.put('/auth/profile', profileData);
+    const response = await api.put('/users/profile', profileData);
+    return response.data;
+  },
+
+  // NEW: Get user stats
+  getUserStats: async () => {
+    const response = await api.get('/users/stats');
     return response.data;
   },
 };
