@@ -41,21 +41,24 @@ const HomePage = ({ allCourses: propCourses }) => {
       role: "Frontend Developer",
       company: "TCS",
       text: "UpSkillr mule maze React concepts clear zale. Highly recommended!",
-      image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan"
+      // image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rohan"
+   image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&h=200&fit=crop"
     },
     {
       name: "Snehal Patil",
       role: "Software Engineer",
       company: "Accenture",
       text: "The practical assignments helped me crack my technical interview with ease.",
-      image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Snehal"
+      // image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Snehal"
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&h=200&fit=crop"
     },
     {
       name: "Arjun Mehta",
       role: "Full Stack Dev",
       company: "Infosys",
       text: "Instructor-led sessions are top-notch. I transitioned from civil to IT!",
-      image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
+      // image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun"
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&h=200&fit=crop"
     }
   ];
 
